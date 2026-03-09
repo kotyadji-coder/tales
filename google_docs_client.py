@@ -5,7 +5,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
-TEMPLATE_ID = os.getenv("GOOGLE_DOCS_TEMPLATE_ID")
+FOLDER_ID = "1Py3vE4rQG71HV9QLgwe7pPEhWvDepVoh"
 
 SCOPES = [
     "https://www.googleapis.com/auth/documents",
@@ -25,26 +25,19 @@ def _get_credentials():
 
 def create_doc_from_template(story: str, image_bytes: bytes, title: str) -> str:
     """
-    Копирует шаблонный Google Doc, вставляет текст сказки и картинку.
-    Возвращает публичную ссылку на документ.
+    Создает новый Google Doc программно, вставляет текст сказки и картинку.
+    Возвращает ссылку на PDF документа.
     """
     creds = _get_credentials()
     drive_service = build("drive", "v3", credentials=creds)
     docs_service = build("docs", "v1", credentials=creds)
 
-    # 1. Копируем шаблон в указанную папку
-    copy_response = drive_service.files().copy(
-        fileId=TEMPLATE_ID,
-        body={"name": title, "parents": ["1Py3vE4rQG71HV9QLgwe7pPEhWvDepVoh"]},
-    ).execute()
-    doc_id = copy_response["id"]
-
-    # 2. Загружаем картинку на Drive в указанную папку
+    # 1. Загружаем картинку на Drive в папку
     image_media = MediaIoBaseUpload(io.BytesIO(image_bytes), mimetype="image/png")
     image_file = drive_service.files().create(
-        body={"name": f"{title}_image.png", "parents": ["1Py3vE4rQG71HV9QLgwe7pPEhWvDepVoh"]},
+        body={"name": f"{title}_image.png", "parents": [FOLDER_ID]},
         media_body=image_media,
-        fields="id, webContentLink",
+        fields="id",
     ).execute()
     image_file_id = image_file["id"]
 
@@ -55,67 +48,128 @@ def create_doc_from_template(story: str, image_bytes: bytes, title: str) -> str:
     ).execute()
     image_url = f"https://drive.google.com/uc?id={image_file_id}"
 
-    # 3. Получаем структуру документа, чтобы найти плейсхолдеры
-    doc = docs_service.documents().get(documentId=doc_id).execute()
-    content = doc.get("body", {}).get("content", [])
+    # 2. Создаём новый Google Doc в папке
+    doc_metadata = {"name": title, "parents": [FOLDER_ID], "mimeType": "application/vnd.google-apps.document"}
+    doc = drive_service.files().create(body=doc_metadata, fields="id").execute()
+    doc_id = doc["id"]
 
-    # 4. Собираем батч-запросы на замену плейсхолдеров
-    # Шаблон должен содержать {{STORY}} и {{IMAGE}} в тексте.
-    requests = [
-        {
-            "replaceAllText": {
-                "containsText": {"text": "{{STORY}}", "matchCase": True},
-                "replaceText": story,
-            }
-        },
-    ]
+    # 3. Собираем запросы для вставки контента в документ
+    requests = []
 
-    # Вставляем картинку: находим позицию плейсхолдера {{IMAGE}} и заменяем на InlineImage
-    image_index = _find_placeholder_index(content, "{{IMAGE}}")
-    if image_index is not None:
-        requests += [
-            # Сначала удаляем плейсхолдер
-            {
-                "replaceAllText": {
-                    "containsText": {"text": "{{IMAGE}}", "matchCase": True},
-                    "replaceText": "",
-                }
+    # Вставляем заголовок (жирный, по центру, размер 24)
+    requests.append({
+        "insertText": {
+            "text": title + "\n",
+            "location": {"index": 1},
+        }
+    })
+
+    # Форматируем заголовок: жирный, размер 24, по центру
+    requests.append({
+        "updateTextStyle": {
+            "range": {
+                "startIndex": 1,
+                "endIndex": len(title) + 1,
             },
-            # Затем вставляем картинку в найденную позицию
-            {
-                "insertInlineImage": {
-                    "location": {"index": image_index},
-                    "uri": image_url,
-                    "objectSize": {
-                        "height": {"magnitude": 300, "unit": "PT"},
-                        "width": {"magnitude": 300, "unit": "PT"},
-                    },
-                }
+            "textStyle": {
+                "bold": True,
+                "fontSize": {"magnitude": 24, "unit": "PT"},
             },
-        ]
+            "fields": "bold,fontSize",
+        }
+    })
 
+    # Выравниваем заголовок по центру
+    requests.append({
+        "updateParagraphStyle": {
+            "range": {
+                "startIndex": 1,
+                "endIndex": len(title) + 1,
+            },
+            "paragraphStyle": {
+                "alignment": "CENTER",
+            },
+            "fields": "alignment",
+        }
+    })
+
+    # Вставляем пустую строку после заголовка
+    requests.append({
+        "insertText": {
+            "text": "\n",
+            "location": {"index": len(title) + 2},
+        }
+    })
+
+    # Вставляем картинку
+    image_insert_index = len(title) + 3
+    requests.append({
+        "insertInlineImage": {
+            "location": {"index": image_insert_index},
+            "uri": image_url,
+            "objectSize": {
+                "height": {"magnitude": 400, "unit": "PT"},
+                "width": {"magnitude": 400, "unit": "PT"},
+            },
+        }
+    })
+
+    # Вставляем пустую строку после картинки
+    requests.append({
+        "insertText": {
+            "text": "\n\n",
+            "location": {"index": image_insert_index + 1},
+        }
+    })
+
+    # Вставляем текст сказки
+    story_insert_index = image_insert_index + 3
+    requests.append({
+        "insertText": {
+            "text": story,
+            "location": {"index": story_insert_index},
+        }
+    })
+
+    # Форматируем текст сказки: размер 11, интервал
+    requests.append({
+        "updateTextStyle": {
+            "range": {
+                "startIndex": story_insert_index,
+                "endIndex": story_insert_index + len(story),
+            },
+            "textStyle": {
+                "fontSize": {"magnitude": 11, "unit": "PT"},
+            },
+            "fields": "fontSize",
+        }
+    })
+
+    # Применяем интервал между строками для сказки
+    requests.append({
+        "updateParagraphStyle": {
+            "range": {
+                "startIndex": story_insert_index,
+                "endIndex": story_insert_index + len(story),
+            },
+            "paragraphStyle": {
+                "lineSpacing": 150,
+            },
+            "fields": "lineSpacing",
+        }
+    })
+
+    # 4. Выполняем все запросы
     docs_service.documents().batchUpdate(
         documentId=doc_id,
         body={"requests": requests},
     ).execute()
 
-    # 5. Открываем доступ к документу по ссылке
+    # 5. Открываем доступ к документу ПО ССЫЛКЕ (anyone with link can view)
     drive_service.permissions().create(
         fileId=doc_id,
         body={"type": "anyone", "role": "reader"},
     ).execute()
 
+    # 6. Возвращаем ссылку на PDF
     return f"https://docs.google.com/document/d/{doc_id}/export?format=pdf"
-
-
-def _find_placeholder_index(content: list, placeholder: str) -> int | None:
-    """Ищет индекс символа плейсхолдера в теле документа."""
-    for element in content:
-        paragraph = element.get("paragraph")
-        if not paragraph:
-            continue
-        for pe in paragraph.get("elements", []):
-            text_run = pe.get("textRun")
-            if text_run and placeholder in text_run.get("content", ""):
-                return pe.get("startIndex")
-    return None
