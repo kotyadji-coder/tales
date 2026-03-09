@@ -32,17 +32,17 @@ def create_doc_from_template(story: str, image_bytes: bytes, title: str) -> str:
     drive_service = build("drive", "v3", credentials=creds)
     docs_service = build("docs", "v1", credentials=creds)
 
-    # 1. Копируем шаблон
+    # 1. Копируем шаблон в указанную папку
     copy_response = drive_service.files().copy(
         fileId=TEMPLATE_ID,
-        body={"name": title},
+        body={"name": title, "parents": ["1Py3vE4rQG71HV9QLgwe7pPEhWvDepVoh"]},
     ).execute()
     doc_id = copy_response["id"]
 
-    # 2. Загружаем картинку на Drive
+    # 2. Загружаем картинку на Drive в указанную папку
     image_media = MediaIoBaseUpload(io.BytesIO(image_bytes), mimetype="image/png")
     image_file = drive_service.files().create(
-        body={"name": f"{title}_image.png", "parents": []},
+        body={"name": f"{title}_image.png", "parents": ["1Py3vE4rQG71HV9QLgwe7pPEhWvDepVoh"]},
         media_body=image_media,
         fields="id, webContentLink",
     ).execute()
