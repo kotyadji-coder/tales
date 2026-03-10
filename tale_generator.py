@@ -32,12 +32,17 @@ def save_tale(title: str, image_bytes: bytes, story_text: str, server_url: str =
 
 def _generate_html(title: str, image_url: str, story_text: str) -> str:
     """Генерирует красивый HTML для сказки."""
+    paragraphs = "".join(
+        f"<p>{p.strip()}</p>" for p in story_text.split("\n") if p.strip()
+    )
     return f"""<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
     <style>
         * {{
             margin: 0;
@@ -46,115 +51,107 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
         }}
 
         body {{
-            font-family: 'Georgia', 'Garamond', serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Lora', Georgia, serif;
+            background-color: #F5F0E8;
             min-height: 100vh;
-            padding: 20px;
-            color: #333;
+            padding: 40px 20px;
+            color: #3D405B;
         }}
 
         .container {{
-            max-width: 800px;
+            max-width: 780px;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(61, 64, 91, 0.10), 0 2px 8px rgba(61, 64, 91, 0.06);
             overflow: hidden;
         }}
 
         .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px 30px;
+            padding: 48px 48px 32px;
             text-align: center;
-            color: white;
-            border-bottom: 5px solid #ffd700;
+            background: #ffffff;
         }}
 
         .header h1 {{
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-            font-weight: normal;
-            letter-spacing: 1px;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #E07A5F;
+            line-height: 1.3;
+            letter-spacing: 0.2px;
         }}
 
-        .decoration {{
-            font-size: 2em;
-            margin: 10px 0;
+        .divider {{
+            width: 60px;
+            height: 3px;
+            background: #E07A5F;
+            border-radius: 2px;
+            margin: 18px auto 0;
+            opacity: 0.5;
         }}
 
         .content {{
-            padding: 40px 30px;
+            padding: 32px 48px 48px;
         }}
 
         .image-container {{
             text-align: center;
-            margin: 30px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 3px solid #667eea;
+            margin: 0 0 36px;
         }}
 
         .image-container img {{
             max-width: 100%;
             height: auto;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(61, 64, 91, 0.12);
+            display: block;
+            margin: 0 auto;
         }}
 
         .story-text {{
-            line-height: 1.8;
-            font-size: 1.1em;
-            color: #555;
-            margin: 30px 0;
-            text-align: justify;
-            letter-spacing: 0.3px;
+            line-height: 1.7;
+            font-size: 1.08em;
+            color: #3D405B;
         }}
 
         .story-text p {{
-            margin-bottom: 20px;
-            text-indent: 2em;
+            margin-bottom: 1.2em;
         }}
 
-        .story-text p:first-letter {{
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #667eea;
+        .story-text p:last-child {{
+            margin-bottom: 0;
         }}
 
         .action-bar {{
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 12px;
             margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #eee;
+            padding-top: 28px;
+            border-top: 1px solid #EDE8DF;
         }}
 
         button {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #F2E8E4;
+            color: #E07A5F;
             border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1em;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-size: 0.95em;
+            font-family: 'Lora', Georgia, serif;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: background 0.2s, transform 0.15s;
             font-weight: 500;
         }}
 
         button:hover {{
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: #E8D8D2;
+            transform: translateY(-1px);
         }}
 
         button:active {{
             transform: translateY(0);
-        }}
-
-        .print-only {{
-            display: none;
         }}
 
         @media print {{
@@ -166,32 +163,45 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
             .container {{
                 box-shadow: none;
                 border-radius: 0;
+                max-width: 100%;
+            }}
+
+            .header {{
+                padding: 24px 24px 16px;
+            }}
+
+            .content {{
+                padding: 16px 24px 24px;
             }}
 
             .action-bar {{
                 display: none;
             }}
 
-            .header {{
-                border-bottom: 2px solid #ccc;
-            }}
-
-            button {{
+            .divider {{
                 display: none;
             }}
 
             @page {{
-                margin: 2cm;
+                margin: 1.5cm;
             }}
         }}
 
         @media (max-width: 600px) {{
+            body {{
+                padding: 16px 12px;
+            }}
+
+            .header {{
+                padding: 32px 24px 20px;
+            }}
+
             .header h1 {{
-                font-size: 1.8em;
+                font-size: 1.6em;
             }}
 
             .content {{
-                padding: 20px 15px;
+                padding: 20px 24px 32px;
             }}
 
             .story-text {{
@@ -200,10 +210,12 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
 
             .action-bar {{
                 flex-direction: column;
+                align-items: center;
             }}
 
             button {{
                 width: 100%;
+                max-width: 280px;
             }}
         }}
     </style>
@@ -211,22 +223,21 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
 <body>
     <div class="container">
         <div class="header">
-            <div class="decoration">✨ 📖 ✨</div>
             <h1>{title}</h1>
-            <div class="decoration">✨ 📖 ✨</div>
+            <div class="divider"></div>
         </div>
 
         <div class="content">
             <div class="image-container">
-                <img src="{image_url}" alt="{{title}}" loading="lazy">
+                <img src="{image_url}" alt="{title}" loading="lazy">
             </div>
 
             <div class="story-text">
-                {story_text.replace(chr(10), '</p><p>')}
+                {paragraphs}
             </div>
 
             <div class="action-bar">
-                <button onclick="window.print()">🖨️ Распечатать</button>
+                <button onclick="window.print()">Распечатать</button>
             </div>
         </div>
     </div>
