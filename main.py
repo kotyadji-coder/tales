@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -17,6 +19,8 @@ from tale_generator import save_tale
 
 SERVER_URL = "http://72.56.126.111:8000"
 TALES_DIR = Path(__file__).parent / "tales"
+
+logger = logging.getLogger("tales")
 
 
 class GenerateRequest(BaseModel):
@@ -38,14 +42,11 @@ app = FastAPI(lifespan=lifespan)
 app.mount("/tales", StaticFiles(directory=str(TALES_DIR)), name="tales")
 
 
-@app.post("/generate")
-async def generate(request: GenerateRequest):
-    """Генерирует сказку и сохраняет в HTML."""
-    user_id = request.user_id
-
+def _generate_and_send(user_id: str, question: str) -> None:
+    """Вся тяжёлая работа — в отдельном потоке, чтобы не блокировать HTTP-ответ."""
     try:
         # 1. Генерируем сказку (парсинг + генерация в одном запросе)
-        raw_response = generate_story(request.question)
+        raw_response = generate_story(question)
         parsed = parse_response(raw_response)
 
         # 2. Генерируем промт для картинки и саму картинку
@@ -61,10 +62,8 @@ async def generate(request: GenerateRequest):
             questions=parsed["questions"],
         )
 
-        # 4. Формируем ссылку на сказку
+        # 4. Отправляем ссылку + текст через SmartBot
         tale_url = f"{SERVER_URL}/tale/{tale_id}"
-
-        # 5. Отправляем сообщение через SmartBot с ссылкой, рекомендациями и вопросами
         final_text = (
             f"🧸 Ваша сказка готова!\n{tale_url}\n\n"
             f"📖 Рекомендации:\n{parsed['recommendations']}\n\n"
@@ -72,10 +71,17 @@ async def generate(request: GenerateRequest):
         )
         send_message(peer_id=user_id, text=final_text)
 
-        return {"url": tale_url, "tale_id": tale_id}
+    except Exception:
+        logger.exception("Ошибка при генерации сказки для user_id=%s", user_id)
+        send_message(peer_id=user_id, text="Произошла ошибка при создании сказки. Попробуйте ещё раз.")
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate")
+async def generate(request: GenerateRequest):
+    """Принимает запрос и сразу возвращает 200. Генерация идёт в фоне."""
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _generate_and_send, request.user_id, request.question)
+    return {"status": "ok"}
 
 
 @app.get("/tale/{tale_id}", response_class=HTMLResponse)
