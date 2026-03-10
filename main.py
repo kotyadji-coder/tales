@@ -52,7 +52,6 @@ async def generate(request: GenerateRequest):
 
         # 3. Сохраняем сказку в HTML с картинкой
         tale_id = save_tale(
-            title="Сказка",
             image_bytes=image_bytes,
             story_text=story,
             server_url=SERVER_URL,

@@ -6,9 +6,10 @@ TALES_DIR = Path(__file__).parent / "tales"
 TALES_DIR.mkdir(exist_ok=True)
 
 
-def save_tale(title: str, image_bytes: bytes, story_text: str, server_url: str = "http://72.56.126.111:8000") -> str:
+def save_tale(image_bytes: bytes, story_text: str, server_url: str = "http://72.56.126.111:8000") -> str:
     """
     Сохраняет сказку в HTML и картинку.
+    Первая строка story_text становится заголовком.
     Возвращает tale_id (UUID).
     """
     tale_id = str(uuid.uuid4())[:8]
@@ -18,9 +19,14 @@ def save_tale(title: str, image_bytes: bytes, story_text: str, server_url: str =
     with open(image_path, "wb") as f:
         f.write(image_bytes)
 
+    # Извлекаем заголовок из первой непустой строки
+    lines = [l.strip() for l in story_text.splitlines() if l.strip()]
+    title = lines[0] if lines else "Сказка"
+    body_text = "\n".join(lines[1:]) if len(lines) > 1 else story_text
+
     # Генерируем HTML
     image_url = f"{server_url}/tales/{tale_id}.png"
-    html_content = _generate_html(title, image_url, story_text)
+    html_content = _generate_html(title, image_url, body_text)
 
     # Сохраняем HTML
     html_path = TALES_DIR / f"{tale_id}.html"
@@ -67,19 +73,19 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
             overflow: hidden;
         }}
 
-        .header {{
-            padding: 48px 48px 32px;
-            text-align: center;
-            background: #ffffff;
+        .content {{
+            padding: 48px 48px 48px;
         }}
 
-        .header h1 {{
+        .story-title {{
             font-family: 'Playfair Display', Georgia, serif;
             font-size: 2.2em;
             font-weight: 700;
             color: #E07A5F;
             line-height: 1.3;
             letter-spacing: 0.2px;
+            text-align: center;
+            margin-bottom: 10px;
         }}
 
         .divider {{
@@ -87,12 +93,8 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
             height: 3px;
             background: #E07A5F;
             border-radius: 2px;
-            margin: 18px auto 0;
+            margin: 0 auto 32px;
             opacity: 0.5;
-        }}
-
-        .content {{
-            padding: 32px 48px 48px;
         }}
 
         .image-container {{
@@ -166,19 +168,11 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
                 max-width: 100%;
             }}
 
-            .header {{
-                padding: 24px 24px 16px;
-            }}
-
             .content {{
                 padding: 16px 24px 24px;
             }}
 
             .action-bar {{
-                display: none;
-            }}
-
-            .divider {{
                 display: none;
             }}
 
@@ -192,16 +186,12 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
                 padding: 16px 12px;
             }}
 
-            .header {{
-                padding: 32px 24px 20px;
-            }}
-
-            .header h1 {{
+            .story-title {{
                 font-size: 1.6em;
             }}
 
             .content {{
-                padding: 20px 24px 32px;
+                padding: 28px 24px 32px;
             }}
 
             .story-text {{
@@ -222,12 +212,10 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>{title}</h1>
-            <div class="divider"></div>
-        </div>
-
         <div class="content">
+            <h1 class="story-title">{title}</h1>
+            <div class="divider"></div>
+
             <div class="image-container">
                 <img src="{image_url}" alt="{title}" loading="lazy">
             </div>
