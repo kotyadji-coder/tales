@@ -4,7 +4,7 @@ import vertexai
 from vertexai.preview.vision_models import ImageGenerationModel
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-REGION = "global"
+REGION = "us-central1"
 IMAGEN_MODEL = "imagen-3.0-generate-001"
 
 
