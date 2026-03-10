@@ -298,10 +298,19 @@ def _generate_html(title: str, image_url: str, story_text: str, recommendations:
             {rec_html}
             {q_html}
 
-            <div class="action-bar">
-                <button onclick="window.print()">Распечатать</button>
+            <div class="action-bar" id="action-bar">
+                <button id="print-btn" onclick="window.print()">Распечатать</button>
+                <p id="tg-hint" style="display:none; color:#888; font-size:0.9em; text-align:center;">
+                    Для печати откройте страницу в браузере
+                </p>
             </div>
         </div>
     </div>
+    <script>
+        if (/Telegram/i.test(navigator.userAgent) || window.TelegramWebviewProxy !== undefined) {{
+            document.getElementById('print-btn').style.display = 'none';
+            document.getElementById('tg-hint').style.display = 'block';
+        }}
+    </script>
 </body>
 </html>"""

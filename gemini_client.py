@@ -35,7 +35,7 @@ def parse_response(response: str) -> dict:
     markers = {
         "---СКАЗКА---": "story",
         "---РЕКОМЕНДАЦИИ---": "recommendations",
-        "---ВОПРОСЫ---": "questions",
+        "---ВОПРОСЫ ДЛЯ ОБСУЖДЕНИЯ---": "questions",
     }
 
     current_key = None
