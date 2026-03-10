@@ -24,6 +24,7 @@ def generate_image(image_prompt: str) -> bytes:
         prompt=image_prompt,
         number_of_images=1,
         aspect_ratio="1:1",
+        person_generation="allow_all",
     )
     image = response.images[0]
     return image._image_bytes
