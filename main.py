@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from gemini_client import generate_image_prompt, generate_story
+from gemini_client import generate_image_prompt, generate_story, parse_response
 from image_generator import generate_image
 from smartbot_client import send_message
 from tale_generator import save_tale
@@ -20,8 +20,9 @@ TALES_DIR = Path(__file__).parent / "tales"
 
 
 class GenerateRequest(BaseModel):
-    peer_id: str
-    message: str
+    user_id: str
+    question: str
+    channel_id: str
 
 
 @asynccontextmanager
@@ -40,29 +41,36 @@ app.mount("/tales", StaticFiles(directory=str(TALES_DIR)), name="tales")
 @app.post("/generate")
 async def generate(request: GenerateRequest):
     """Генерирует сказку и сохраняет в HTML."""
-    peer_id = request.peer_id
+    user_id = request.user_id
 
     try:
         # 1. Генерируем сказку (парсинг + генерация в одном запросе)
-        story = generate_story(request.message)
+        raw_response = generate_story(request.question)
+        parsed = parse_response(raw_response)
 
         # 2. Генерируем промт для картинки и саму картинку
-        img_prompt = generate_image_prompt(story)
+        img_prompt = generate_image_prompt(parsed["story"])
         image_bytes = generate_image(img_prompt)
 
         # 3. Сохраняем сказку в HTML с картинкой
         tale_id = save_tale(
             image_bytes=image_bytes,
-            story_text=story,
+            story_text=parsed["story"],
             server_url=SERVER_URL,
+            recommendations=parsed["recommendations"],
+            questions=parsed["questions"],
         )
 
         # 4. Формируем ссылку на сказку
         tale_url = f"{SERVER_URL}/tale/{tale_id}"
 
-        # 5. Отправляем сообщение через SmartBot с ссылкой
-        final_text = f"✨ Вот твоя сказка! ✨\n\n{tale_url}"
-        send_message(peer_id=peer_id, text=final_text)
+        # 5. Отправляем сообщение через SmartBot с ссылкой, рекомендациями и вопросами
+        final_text = (
+            f"🧸 Ваша сказка готова!\n{tale_url}\n\n"
+            f"📖 Рекомендации:\n{parsed['recommendations']}\n\n"
+            f"💬 Вопросы для обсуждения:\n{parsed['questions']}"
+        )
+        send_message(peer_id=user_id, text=final_text)
 
         return {"url": tale_url, "tale_id": tale_id}
 

@@ -6,6 +6,8 @@
 
 Интеграция с Telegram реализована через **SmartBot Pro** (не через Telegram Bot API напрямую).
 
+Интеграция со SmartBot описана в docs/smartbot_integration.md
+
 ---
 
 # Ключевые файлы и их роль
@@ -37,11 +39,9 @@
 # Что осталось доделать
 
 - [ ] **Написать `GENERATE_IMAGE_PROMPT_PROMPT`** в `prompts.py` (сейчас заглушка с TODO)
-- [ ] **Создать шаблон Google Doc** с плейсхолдерами `{{STORY}}` и `{{IMAGE}}`
-- [ ] **Настроить Google Cloud**: включить Vertex AI API, Docs API, Drive API
+- [ ] **Настроить Google Cloud**: включить Vertex AI API
 - [ ] **Настроить аутентификацию**: service account или Application Default Credentials
 - [ ] **Настроить SmartBot Pro**: указать Webhook URL на `/generate`
-- [ ] **Деплой на Render**: добавить переменные окружения, настроить `GOOGLE_APPLICATION_CREDENTIALS_JSON`
 - [ ] **Протестировать** полный пайплайн end-to-end
 
 ---
@@ -49,8 +49,7 @@
 # Важные решения
 
 - **Парсинг + генерация сказки — один запрос к Gemini.** Промт сам извлекает данные о ребёнке и сразу генерирует сказку. Отдельного шага парсинга нет.
-- **Google Docs шаблон** должен содержать плейсхолдеры `{{STORY}}` и `{{IMAGE}}` в теле документа.
-- **Аутентификация GCP** — через Application Default Credentials локально, через `GOOGLE_APPLICATION_CREDENTIALS_JSON` (JSON-ключ в одну строку) на Render.
+- **Аутентификация GCP** — через Application Default Credentials локально, через service account JSON на VPS.
 - **Формат ответа SmartBot**: поле называется `Messagetext` (с заглавной буквы), находится внутри `data`.
 
 ---
@@ -62,5 +61,4 @@ SMARTBOT_ACCESS_TOKEN      — токен SmartBot Pro
 SMARTBOT_CHANNEL_ID        — ID канала SmartBot Pro
 SMARTBOT_BLOCK_ID          — ID блока для отправки ответа
 GOOGLE_CLOUD_PROJECT       — project-5c6fc698-9b69-4d2d-95d
-GOOGLE_DOCS_TEMPLATE_ID    — ID шаблонного Google Doc
 ```

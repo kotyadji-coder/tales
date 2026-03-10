@@ -6,7 +6,13 @@ TALES_DIR = Path(__file__).parent / "tales"
 TALES_DIR.mkdir(exist_ok=True)
 
 
-def save_tale(image_bytes: bytes, story_text: str, server_url: str = "http://72.56.126.111:8000") -> str:
+def save_tale(
+    image_bytes: bytes,
+    story_text: str,
+    server_url: str = "http://72.56.126.111:8000",
+    recommendations: str = "",
+    questions: str = "",
+) -> str:
     """
     Сохраняет сказку в HTML и картинку.
     Первая строка story_text становится заголовком.
@@ -26,7 +32,7 @@ def save_tale(image_bytes: bytes, story_text: str, server_url: str = "http://72.
 
     # Генерируем HTML
     image_url = f"{server_url}/tales/{tale_id}.png"
-    html_content = _generate_html(title, image_url, body_text)
+    html_content = _generate_html(title, image_url, body_text, recommendations, questions)
 
     # Сохраняем HTML
     html_path = TALES_DIR / f"{tale_id}.html"
@@ -36,11 +42,33 @@ def save_tale(image_bytes: bytes, story_text: str, server_url: str = "http://72.
     return tale_id
 
 
-def _generate_html(title: str, image_url: str, story_text: str) -> str:
+def _generate_html(title: str, image_url: str, story_text: str, recommendations: str = "", questions: str = "") -> str:
     """Генерирует красивый HTML для сказки."""
     paragraphs = "".join(
         f"<p>{p.strip()}</p>" for p in story_text.split("\n") if p.strip()
     )
+    rec_html = ""
+    if recommendations:
+        rec_paragraphs = "".join(
+            f"<p>{p.strip()}</p>" for p in recommendations.split("\n") if p.strip()
+        )
+        rec_html = f"""
+            <div class="extra-section recommendations">
+                <h2>📖 Рекомендации для родителей</h2>
+                {rec_paragraphs}
+            </div>"""
+
+    q_html = ""
+    if questions:
+        q_paragraphs = "".join(
+            f"<p>{p.strip()}</p>" for p in questions.split("\n") if p.strip()
+        )
+        q_html = f"""
+            <div class="extra-section questions">
+                <h2>💬 Вопросы для обсуждения</h2>
+                {q_paragraphs}
+            </div>"""
+
     return f"""<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -123,6 +151,50 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
 
         .story-text p:last-child {{
             margin-bottom: 0;
+        }}
+
+        .extra-section {{
+            margin-top: 40px;
+            padding: 28px 32px;
+            border-radius: 16px;
+        }}
+
+        .extra-section h2 {{
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }}
+
+        .extra-section p {{
+            line-height: 1.7;
+            font-size: 1em;
+            margin-bottom: 0.8em;
+        }}
+
+        .extra-section p:last-child {{
+            margin-bottom: 0;
+        }}
+
+        .recommendations {{
+            background: #FFF8F0;
+            border-left: 4px solid #E07A5F;
+        }}
+
+        .recommendations h2 {{
+            color: #E07A5F;
+        }}
+
+        .questions {{
+            background: #F0F4FF;
+            border-left: 4px solid #81B3D2;
+        }}
+
+        .questions h2 {{
+            color: #5A8FAD;
         }}
 
         .action-bar {{
@@ -223,6 +295,8 @@ def _generate_html(title: str, image_url: str, story_text: str) -> str:
             <div class="story-text">
                 {paragraphs}
             </div>
+            {rec_html}
+            {q_html}
 
             <div class="action-bar">
                 <button onclick="window.print()">Распечатать</button>
