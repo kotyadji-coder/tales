@@ -40,6 +40,7 @@ app = FastAPI(lifespan=lifespan)
 
 # Статические файлы (картинки сказок)
 app.mount("/tales", StaticFiles(directory=str(TALES_DIR)), name="tales")
+app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 
 
 def _generate_and_send(user_id: str, question: str) -> None:
@@ -74,6 +75,13 @@ def _generate_and_send(user_id: str, question: str) -> None:
     except Exception:
         logger.exception("Ошибка при генерации сказки для user_id=%s", user_id)
         send_message(peer_id=user_id, text="Произошла ошибка при создании сказки. Попробуйте ещё раз.")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    """Главная страница сайта."""
+    html_path = Path(__file__).parent / "templates" / "index.html"
+    return html_path.read_text(encoding="utf-8")
 
 
 @app.post("/generate")

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO -->
+  <title>СказкаБот — Терапевтические сказки для детей | Персональные истории</title>
+  <meta name="description" content="Создайте уникальную терапевтическую сказку для вашего ребёнка. С учётом его характера, увлечений и того, что тревожит. Бесплатно, через Telegram." />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="СказкаБот — Терапевтические сказки для детей" />
+  <meta property="og:description" content="Персональные терапевтические сказки для вашего ребёнка — с учётом его характера, увлечений и того, что его тревожит." />
+  <!-- og:image: замените на реальное изображение -->
+  <meta property="og:image" content="/static/og-image.jpg" />
+  <meta property="og:url" content="https://skazkabot.ru" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="СказкаБот — Терапевтические сказки для детей" />
+  <meta name="twitter:description" content="Персональные терапевтические сказки для вашего ребёнка." />
+
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --lavender:   #c7b8ea;
+      --lavender-light: #ede8f8;
+      --peach:      #f7cdb4;
+      --peach-light: #fdf0e8;
+      --mint:       #b4dfd4;
+      --mint-light: #e6f7f3;
+      --yellow:     #fce8a0;
+      --yellow-light: #fffaec;
+      --cream:      #fdf8f2;
+      --text:       #3d2e2e;
+      --text-soft:  #7a6060;
+      --white:      #ffffff;
+      --radius-lg:  24px;
+      --radius-xl:  36px;
+      --shadow:     0 4px 32px rgba(100, 70, 70, 0.08);
+      --transition: 0.3s ease;
+      --font: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
+    /* ─── Utilities ────────────────────────────────────────────── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    section { padding: 80px 0; }
+
+    .section-title {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 48px;
+      color: var(--text);
+    }
+
+    /* Fade-in animation on scroll */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ─── Buttons ──────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-family: var(--font);
+      font-size: 1rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform var(--transition), box-shadow var(--transition);
+      cursor: pointer;
+      border: none;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(100, 70, 70, 0.18);
+    }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c5cbf, #9b7dd4);
+      color: #fff;
+    }
+    .btn-vk {
+      background: linear-gradient(135deg, #4a76a8, #5b8ec4);
+      color: #fff;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--lavender);
+      color: var(--text);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1.5px solid rgba(199, 184, 234, 0.6);
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 10px 22px;
+    }
+    .btn-ghost:hover {
+      background: var(--lavender-light);
+      border-color: var(--lavender);
+    }
+
+    /* ─── HEADER ───────────────────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(253, 248, 242, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(199, 184, 234, 0.2);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+    }
+
+    /* Логотип — замените содержимое .logo на тег <img> */
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #7c5cbf;
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--text); }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    nav a {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-soft);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    nav a:hover { color: #7c5cbf; }
+
+    .nav-cta { display: flex; gap: 10px; }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text);
+      margin: 5px 0;
+      border-radius: 2px;
+      transition: var(--transition);
+    }
+
+    /* Mobile nav */
+    .mobile-nav {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+      background: var(--white);
+      border-top: 1px solid var(--lavender-light);
+      padding: 16px 24px 24px;
+    }
+    .mobile-nav.open { display: flex; }
+    .mobile-nav a {
+      padding: 12px 0;
+      font-weight: 600;
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid var(--lavender-light);
+      font-size: 1rem;
+    }
+    .mobile-nav a:last-child { border-bottom: none; }
+    .mobile-nav-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    /* ─── HERO ─────────────────────────────────────────────────── */
+    .hero {
+      padding: 80px 0 60px;
+      overflow: hidden;
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .hero-text h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+    .hero-text h1 em {
+      font-style: normal;
+      color: #7c5cbf;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1rem, 2vw, 1.15rem);
+      color: var(--text-soft);
+      max-width: 480px;
+      margin-bottom: 36px;
+      line-height: 1.7;
+    }
+
+    .hero-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .hero-note {
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+    .hero-note span { margin: 0 6px; opacity: 0.4; }
+
+    /* Место для главной картинки */
+    .hero-image {
+      /* ЗАМЕНИТЕ ЭТОТ БЛОК: удалите .hero-placeholder и добавьте тег <img> */
+      position: relative;
+    }
+
+    .hero-placeholder {
+      width: 100%;
+      aspect-ratio: 1 / 1.05;
+      max-width: 480px;
+      background: linear-gradient(135deg, var(--lavender-light), var(--peach-light), var(--mint-light));
+      border-radius: var(--radius-xl);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-placeholder::before {
+      content: '';
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      background: var(--peach);
+      border-radius: 50%;
+      top: -60px;
+      right: -60px;
+      opacity: 0.4;
+    }
+    .hero-placeholder::after {
+      content: '';
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      background: var(--mint);
+      border-radius: 50%;
+      bottom: -40px;
+      left: -40px;
+      opacity: 0.4;
+    }
+
+    .hero-placeholder-text {
+      font-size: 1rem;
+      color: var(--text-soft);
+      margin-top: 12px;
+      font-weight: 600;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── HOW IT WORKS ─────────────────────────────────────────── */
+    .how {
+      background: var(--lavender-light);
+      border-radius: var(--radius-xl);
+      margin: 0 16px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .step {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 36px 28px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .step-number {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #7c5cbf;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Иконка шага — ЗАМЕНИТЕ на тег <img> с акварельной иконкой */
+    .step-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .step h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .step p {
+      font-size: 0.95rem;
+      color: var(--text-soft);
+      line-height: 1.6;
+    }
+
+    /* ─── WHY IT WORKS ─────────────────────────────────────────── */
+    .why {}
+
+    .why-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .why-card {
+      padding: 32px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .why-card:nth-child(1) { background: var(--peach-light); }
+    .why-card:nth-child(2) { background: var(--mint-light); }
+    .why-card:nth-child(3) { background: var(--yellow-light); }
+    .why-card:nth-child(4) { background: var(--lavender-light); }
+
+    .why-card h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .why-card p {
+      font-size: 0.95rem;
+      color: var(--text-soft);
+      line-height: 1.7;
+    }
+
+    /* ─── TOPICS ───────────────────────────────────────────────── */
+    .topics {
+      background: var(--mint-light);
+      border-radius: var(--radius-xl);
+      margin: 0 16px;
+      text-align: center;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .tag {
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: var(--white);
+      box-shadow: 0 2px 12px rgba(100, 70, 70, 0.08);
+      transition: transform var(--transition);
+    }
+    .tag:hover { transform: scale(1.04); }
+    .tag:nth-child(odd)  { background: var(--lavender-light); }
+    .tag:nth-child(even) { background: var(--peach-light); }
+    .tag:nth-child(3n)   { background: var(--yellow-light); }
+
+    .topics-note {
+      font-size: 0.95rem;
+      color: var(--text-soft);
+      font-style: italic;
+    }
+
+    /* ─── WHAT YOU GET ─────────────────────────────────────────── */
+    .get {}
+
+    .get-list {
+      max-width: 620px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .get-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      transition: transform var(--transition);
+    }
+    .get-item:hover { transform: translateX(4px); }
+
+    /* Иконка — ЗАМЕНИТЕ span.get-icon на тег <img> */
+    .get-icon {
+      font-size: 1.8rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .get-item-text h4 {
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .get-item-text p {
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+
+    /* ─── EXAMPLE ──────────────────────────────────────────────── */
+    .example {
+      background: var(--peach-light);
+      border-radius: var(--radius-xl);
+      margin: 0 16px;
+    }
+
+    .example-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .example-quote {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 40px 48px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .example-quote::before {
+      content: '«';
+      position: absolute;
+      top: -16px;
+      left: 36px;
+      font-size: 5rem;
+      color: var(--peach);
+      font-family: serif;
+      line-height: 1;
+    }
+
+    .example-quote p {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: var(--text);
+      font-style: italic;
+    }
+
+    .example-quote p + p { margin-top: 16px; }
+
+    .example-caption {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+
+    /* ─── REVIEWS ──────────────────────────────────────────────── */
+    .reviews {}
+
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .review-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .review-stars { font-size: 1rem; letter-spacing: 2px; }
+
+    .review-text {
+      font-size: 0.98rem;
+      color: var(--text);
+      line-height: 1.7;
+      flex: 1;
+    }
+    .review-text::before { content: '«'; }
+    .review-text::after  { content: '»'; }
+
+    .review-author {
+      font-size: 0.88rem;
+      color: var(--text-soft);
+      font-weight: 600;
+    }
+
+    /* ─── CTA ──────────────────────────────────────────────────── */
+    .cta {
+      background: linear-gradient(135deg, #7c5cbf 0%, #9b7dd4 50%, #c4a8e8 100%);
+      border-radius: var(--radius-xl);
+      margin: 0 16px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .cta .section-title { color: #fff; }
+
+    .cta-subtitle {
+      font-size: 1.1rem;
+      opacity: 0.88;
+      margin-top: -32px;
+      margin-bottom: 40px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .btn-white {
+      background: rgba(255,255,255,0.95);
+      color: #7c5cbf;
+    }
+    .btn-white-outline {
+      background: transparent;
+      border: 2px solid rgba(255,255,255,0.7);
+      color: #fff;
+    }
+
+    /* ─── FOOTER ───────────────────────────────────────────────── */
+    footer {
+      padding: 48px 0 36px;
+      text-align: center;
+      border-top: 1px solid rgba(199, 184, 234, 0.25);
+    }
+
+    .footer-love {
+      font-size: 0.98rem;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+    }
+
+    .footer-copy {
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      opacity: 0.65;
+    }
+
+    /* ─── RESPONSIVE ───────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .steps { grid-template-columns: 1fr; max-width: 440px; margin: 0 auto; }
+      .why-cards { grid-template-columns: 1fr; }
+      .reviews-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      section { padding: 56px 0; }
+      .how, .topics, .example, .cta { margin: 0; border-radius: var(--radius-lg); }
+
+      .hero-inner {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .hero-image { order: -1; }
+      .hero-placeholder { max-width: 100%; aspect-ratio: 4 / 3; margin: 0 auto; }
+
+      nav .nav-links { display: none; }
+      .nav-cta { display: none; }
+      .hamburger { display: block; }
+
+      .why-cards { grid-template-columns: 1fr; }
+
+      .example-quote { padding: 28px 24px; }
+      .example-quote::before { font-size: 4rem; }
+    }
+
+    @media (max-width: 480px) {
+      .cta-buttons { flex-direction: column; align-items: center; }
+      .cta-buttons .btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── HEADER ──────────────────────────────────────────────────── -->
+<header>
+  <div class="container">
+    <div class="header-inner">
+
+      <a href="/" class="logo">
+        <img src="/static/logo.png" alt="СказкаБот" style="height:40px;width:auto;display:block;" />
+      </a>
+
+      <nav>
+        <div class="nav-links" style="display:flex;gap:32px;">
+          <a href="#how">Как работает</a>
+          <a href="#why">Почему сказки</a>
+          <a href="#reviews">Отзывы</a>
+        </div>
+        <div class="nav-cta">
+          <a href="#cta" class="btn btn-ghost">Попробовать</a>
+        </div>
+      </nav>
+
+      <button class="hamburger" id="hamburger" aria-label="Меню">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Мобильное меню -->
+  <div class="mobile-nav" id="mobile-nav">
+    <a href="#how" onclick="closeMobileNav()">Как работает</a>
+    <a href="#why" onclick="closeMobileNav()">Почему сказки</a>
+    <a href="#topics" onclick="closeMobileNav()">Темы сказок</a>
+    <a href="#reviews" onclick="closeMobileNav()">Отзывы</a>
+    <div class="mobile-nav-buttons">
+      <a href="#cta" class="btn btn-ghost" onclick="closeMobileNav()" style="text-align:center;justify-content:center;">Попробовать</a>
+    </div>
+  </div>
+</header>
+
+
+<!-- ─── HERO ────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+
+      <div class="hero-text reveal">
+        <h1>Сказка,<br/>которая <em>помогает</em></h1>
+        <p class="hero-subtitle">
+          Персональные терапевтические сказки для вашего ребёнка — с учётом его характера, увлечений и того, что его тревожит
+        </p>
+        <div class="hero-buttons">
+          <a href="#cta" class="btn btn-vk">Создать сказку</a>
+        </div>
+        <p class="hero-note">Попробуйте бесплатно <span>•</span> Займёт 5 минут</p>
+      </div>
+
+      <div class="hero-image reveal reveal-delay-2">
+        <img src="/static/hero-image.png" alt="Иллюстрация терапевтической сказки" style="width:100%;border-radius:36px;box-shadow:var(--shadow);" />
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── КАК ЭТО РАБОТАЕТ ─────────────────────────────────────────── -->
+<section class="how" id="how">
+  <div class="container">
+    <h2 class="section-title reveal">Как это работает</h2>
+
+    <div class="steps">
+
+      <div class="step reveal reveal-delay-1">
+        <div class="step-number">1</div>
+        <img src="/static/icon-1.png" alt="" class="step-icon" style="width:72px;height:72px;object-fit:contain;" />
+        <h3>Расскажите о ребёнке</h3>
+        <p>Ответьте на несколько вопросов: возраст, увлечения, что беспокоит</p>
+      </div>
+
+      <div class="step reveal reveal-delay-2">
+        <div class="step-number">2</div>
+        <img src="/static/icon-2.png" alt="" class="step-icon" style="width:72px;height:72px;object-fit:contain;" />
+        <h3>ИИ создаёт сказку</h3>
+        <p>Уникальная история с персонажами из мира вашего ребёнка</p>
+      </div>
+
+      <div class="step reveal reveal-delay-3">
+        <div class="step-number">3</div>
+        <img src="/static/icon-3.png" alt="" class="step-icon" style="width:72px;height:72px;object-fit:contain;" />
+        <h3>Читайте вместе</h3>
+        <p>Получите сказку с иллюстрацией, вопросами для обсуждения и рекомендациями для родителей</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── ПОЧЕМУ СКАЗКИ РАБОТАЮТ ───────────────────────────────────── -->
+<section class="why" id="why">
+  <div class="container">
+    <h2 class="section-title reveal">Детям нужны образы, а не аргументы</h2>
+
+    <div class="why-cards">
+
+      <div class="why-card reveal reveal-delay-1">
+        <img src="/static/icon-4.png" alt="" style="width:56px;height:56px;object-fit:contain;margin-bottom:12px;" />
+        <h3>Безопасное пространство</h3>
+        <p>Ребёнок проживает сложные ситуации через персонажа. Это не он боится — это зайчик боится. И зайчик справился.</p>
+      </div>
+
+      <div class="why-card reveal reveal-delay-2">
+        <img src="/static/icon-5.png" alt="" style="width:56px;height:56px;object-fit:contain;margin-bottom:12px;" />
+        <h3>Язык, понятный детям</h3>
+        <p>Дети до 10 лет не понимают «перестань бояться» или «веди себя хорошо». Но они понимают историю про дракона, который научился дружить.</p>
+      </div>
+
+      <div class="why-card reveal reveal-delay-3">
+        <img src="/static/icon-6.png" alt="" style="width:56px;height:56px;object-fit:contain;margin-bottom:12px;" />
+        <h3>Эмоциональный интеллект</h3>
+        <p>Через сказки дети учатся называть свои чувства, понимать других и находить решения.</p>
+      </div>
+
+      <div class="why-card reveal reveal-delay-4">
+        <img src="/static/icon-7.png" alt="" style="width:56px;height:56px;object-fit:contain;margin-bottom:12px;" />
+        <h3>Связь с родителем</h3>
+        <p>Совместное чтение + обсуждение = доверие и близость. Мы даём вопросы, которые помогут поговорить о действительно важном.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── С ЧЕМ ПОМОГАЮТ НАШИ СКАЗКИ ──────────────────────────────── -->
+<section class="topics" id="topics">
+  <div class="container">
+    <h2 class="section-title reveal">С чем помогают наши сказки</h2>
+
+    <div class="tags reveal">
+      <span class="tag">😨 Страхи и тревожность</span>
+      <span class="tag">🏫 Адаптация к садику / школе</span>
+      <span class="tag">👶 Рождение второго ребёнка</span>
+      <span class="tag">💔 Развод родителей</span>
+      <span class="tag">😤 Агрессия и истерики</span>
+      <span class="tag">🌙 Проблемы с засыпанием</span>
+      <span class="tag">🙈 Застенчивость</span>
+      <span class="tag">📦 Переезд</span>
+      <span class="tag">🌿 Потеря близкого</span>
+      <span class="tag">🌟 Низкая самооценка</span>
+    </div>
+
+    <p class="topics-note reveal">Каждая сказка создаётся под конкретную ситуацию вашей семьи</p>
+  </div>
+</section>
+
+
+<!-- ─── ЧТО ВЫ ПОЛУЧИТЕ ──────────────────────────────────────────── -->
+<section class="get" id="get">
+  <div class="container">
+    <h2 class="section-title reveal">Что вы получите</h2>
+
+    <div class="get-list">
+
+      <div class="get-item reveal reveal-delay-1">
+        <!--
+          ИКОНКА: замените span.get-icon на <img src="/static/icons/book-open.png" alt="" class="get-icon" style="width:40px;height:40px;" />
+        -->
+        <span class="get-icon">📖</span>
+        <div class="get-item-text">
+          <h4>Уникальную сказку</h4>
+          <p>На 5–7 минут чтения, написанную специально для вашего ребёнка</p>
+        </div>
+      </div>
+
+      <div class="get-item reveal reveal-delay-2">
+        <span class="get-icon">🎨</span>
+        <div class="get-item-text">
+          <h4>Красивую иллюстрацию</h4>
+          <p>Цветная картинка к истории, созданная нейросетью</p>
+        </div>
+      </div>
+
+      <div class="get-item reveal reveal-delay-3">
+        <span class="get-icon">❓</span>
+        <div class="get-item-text">
+          <h4>Вопросы для обсуждения</h4>
+          <p>Помогут поговорить с ребёнком о чувствах и ситуации</p>
+        </div>
+      </div>
+
+      <div class="get-item reveal reveal-delay-4">
+        <span class="get-icon">💡</span>
+        <div class="get-item-text">
+          <h4>Рекомендации для родителей</h4>
+          <p>Практические советы как продолжить работу с темой</p>
+        </div>
+      </div>
+
+      <div class="get-item reveal">
+        <span class="get-icon">🖨️</span>
+        <div class="get-item-text">
+          <h4>Версию для печати</h4>
+          <p>Удобный формат, чтобы распечатать и читать без телефона</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── ПРИМЕР СКАЗКИ ────────────────────────────────────────────── -->
+<section class="example" id="example">
+  <div class="container">
+    <div class="example-inner">
+      <h2 class="section-title reveal">Фрагмент сказки</h2>
+
+      <div class="example-quote reveal">
+        <!--
+          ПРИМЕР СКАЗКИ: вставьте реальный фрагмент или замените на скриншот.
+          Для скриншота:
+          <img src="/static/example-tale.png" alt="Пример сказки" style="width:100%;border-radius:16px;" />
+        -->
+        <p>Жил-был маленький медвежонок Тимоша. Он очень любил свой домик в лесу — тёплый, уютный, с мягкой постелькой из мха. Но однажды мама сказала, что они переезжают в новый домик, у большой реки.</p>
+        <p>Тимоша насупился. «Я не хочу переезжать», — сказал он тихо. — «Там же нет моей любимой берёзки и моих друзей — белочки Нюши и ёжика Пети».</p>
+        <p>Мама обняла его крепко-крепко: «Твоя берёзка будет скучать по тебе. А у реки растут другие деревья — и там тебя ждут другие друзья, которые пока не знают, какой ты замечательный».</p>
+      </div>
+
+      <p class="example-caption reveal">Каждая сказка уникальна — имена, места и ситуации создаются под вашего ребёнка</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── ОТЗЫВЫ ───────────────────────────────────────────────────── -->
+<section class="reviews" id="reviews">
+  <div class="container">
+    <h2 class="section-title reveal">Что говорят родители</h2>
+
+    <div class="reviews-grid">
+
+      <div class="review-card reveal reveal-delay-1">
+        <div class="review-stars">⭐⭐⭐⭐⭐</div>
+        <p class="review-text">Сын 4 года боялся темноты. После сказки про светлячка сам попросил выключить ночник</p>
+        <div class="review-author">— Мария, мама Артёма</div>
+      </div>
+
+      <div class="review-card reveal reveal-delay-2">
+        <div class="review-stars">⭐⭐⭐⭐⭐</div>
+        <p class="review-text">Дочка ревновала к младшей сестре. Сказка про двух принцесс помогла ей понять свои чувства</p>
+        <div class="review-author">— Анна, мама Софии</div>
+      </div>
+
+      <div class="review-card reveal reveal-delay-3">
+        <div class="review-stars">⭐⭐⭐⭐⭐</div>
+        <p class="review-text">Я не знала как объяснить ребёнку переезд. Сказка сделала это лучше меня</p>
+        <div class="review-author">— Елена, мама Миши</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── ФИНАЛЬНЫЙ CTA ─────────────────────────────────────────────── -->
+<section class="cta" id="cta">
+  <div class="container">
+    <h2 class="section-title reveal">Создайте сказку для вашего ребёнка</h2>
+    <p class="cta-subtitle reveal">Это бесплатно и займёт 5 минут</p>
+    <div class="cta-buttons reveal">
+      <a href="https://t.me/Protale_bot" class="btn btn-white" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.93 7.05l-1.66 7.83c-.12.56-.46.7-.93.43l-2.58-1.9-1.24 1.2c-.14.14-.26.26-.53.26l.19-2.66 4.84-4.37c.21-.19-.05-.29-.32-.1L8.17 13.46l-2.52-.79c-.55-.17-.56-.55.12-.82l9.83-3.79c.45-.16.85.11.7.82z" fill="currentColor"/></svg>
+        Открыть в Telegram
+      </a>
+      <a href="https://vk.me/Protale" class="btn btn-white-outline" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20.447 15.337c-.352-.432-.99-1.02-1.915-1.766l-.007-.007-.004-.003-.003-.003c-.567-.46-.923-.777-1.066-.95-.283-.346-.35-.695-.2-1.05.1-.24.486-.8 1.16-1.685.343-.46.62-.83.828-1.11.8-1.066 1.14-1.77 1.02-2.112l-.05-.084c-.146-.2-.537-.3-1.173-.258l-2.56.016c-.097 0-.24.03-.43.088-.187.06-.35.15-.49.274-.136.12-.254.3-.354.532-.07.17-.18.49-.328.966-.152.475-.3.88-.447 1.213-.14.33-.258.568-.35.713-.09.146-.168.228-.235.25-.065.02-.148-.02-.25-.12-.103-.1-.196-.226-.278-.375a4.553 4.553 0 01-.2-.565 8.14 8.14 0 01-.12-.658l-.085-.624c-.044-.37-.05-.696-.018-.976.034-.28.092-.497.174-.652.08-.153.19-.273.33-.358.14-.084.245-.13.316-.135.07-.005.205.01.404.048l-2.673-.037c-.347-.003-.624.08-.83.25-.206.17-.33.36-.372.57l-.014.088c-.03.334.042 1.13.217 2.388.176 1.258.277 2.02.305 2.29.028.27.08.48.155.633.05.1.12.18.21.25.08.05.155.07.222.06.067-.01.18-.07.34-.19.32-.24.71-.73 1.173-1.468.232-.368.404-.644.514-.83.11-.183.2-.31.273-.38.07-.07.14-.1.208-.09.13.02.244.126.342.316.085.165.154.37.207.614.053.244.09.476.113.698.023.22.035.43.035.624 0 .41-.013.755-.04 1.034-.026.28-.052.495-.078.648-.026.153-.04.253-.04.3 0 .237.1.395.3.473.13.052.355.065.677.04a4.52 4.52 0 00.75-.116c.21-.063.4-.17.57-.322.17-.15.318-.36.444-.63.127-.268.245-.586.356-.956.11-.37.207-.73.29-1.08.085-.35.147-.6.186-.75.04-.15.105-.285.196-.403.09-.118.213-.18.37-.185.156-.005.3.04.434.138.133.097.337.31.61.638.274.327.512.622.714.884.2.262.383.495.544.697.162.202.3.373.42.514.12.14.21.24.27.3.06.057.144.116.25.176.107.06.23.094.368.103.138.008.438-.006.9-.042l2.29-.03c.403-.008.693-.065.87-.17.178-.104.265-.25.262-.438l-.014-.18c-.01-.13-.07-.3-.17-.508-.1-.208-.26-.434-.48-.678l-.007-.008z" fill="currentColor"/></svg>
+        Открыть во ВКонтакте
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <p class="footer-love">Сделано с ❤️ для заботливых родителей</p>
+    <p class="footer-copy">© 2026 Самозанятый Ломако Анна Игоревна</p>
+  </div>
+</footer>
+
+
+<script>
+  // ─── Hamburger menu ─────────────────────────────────────────────
+  const hamburger = document.getElementById('hamburger');
+  const mobileNav = document.getElementById('mobile-nav');
+
+  hamburger.addEventListener('click', () => {
+    mobileNav.classList.toggle('open');
+  });
+
+  function closeMobileNav() {
+    mobileNav.classList.remove('open');
+  }
+
+  // ─── Scroll reveal animation ─────────────────────────────────────
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
