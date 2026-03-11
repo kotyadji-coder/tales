@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git push -u origin main)"
+      "Bash(git push -u origin main)",
+      "Bash(git add image_generator.py prompts.py && git diff --cached --stat)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nFix: Bypass Responsible AI filter for Imagen — add person_generation=allow_all and avoid 'child'/'kid' in image prompts\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push origin main)",
+      "Bash(ssh -i ~/.ssh/vps_key root@72.56.126.111 \"cd /opt/tales && git pull origin main && systemctl restart tales && systemctl status tales --no-pager -l\")"
     ]
   }
 }

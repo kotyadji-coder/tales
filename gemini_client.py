@@ -46,7 +46,7 @@ def parse_response(response: str) -> dict:
         elif current_key is not None:
             sections[current_key] += line + "\n"
 
-    return {k: v.strip() for k, v in sections.items()}
+    return {k: v.strip().replace("**", "") for k, v in sections.items()}
 
 
 def generate_image_prompt(story: str) -> str:
