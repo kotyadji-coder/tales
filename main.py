@@ -3,6 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,6 +18,21 @@ from image_generator import generate_image
 from smartbot_client import send_message
 from tale_generator import save_tale
 
+ADMIN_BOT_TOKEN = "8688139519:AAHjXoWLFXvurj5a60z_wghN50OxgnOoXUM"
+ADMIN_CHAT_ID = "856877325"
+
+
+def _notify_admin(error_message: str, user_id: str) -> None:
+    text = f"❌ Ошибка: {error_message}, user: {user_id}"
+    try:
+        httpx.post(
+            f"https://api.telegram.org/bot{ADMIN_BOT_TOKEN}/sendMessage",
+            json={"chat_id": ADMIN_CHAT_ID, "text": text},
+            timeout=10,
+        )
+    except Exception:
+        logger.exception("Не удалось отправить уведомление администратору")
+
 SERVER_URL = "http://72.56.126.111:8000"
 TALES_DIR = Path(__file__).parent / "tales"
 
@@ -27,6 +43,7 @@ class GenerateRequest(BaseModel):
     user_id: str
     question: str
     channel_id: str
+    callback_url: str | None = None
 
 
 @asynccontextmanager
@@ -43,7 +60,7 @@ app.mount("/tales", StaticFiles(directory=str(TALES_DIR)), name="tales")
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 
 
-def _generate_and_send(user_id: str, question: str) -> None:
+def _generate_and_send(user_id: str, question: str, callback_url: str | None = None) -> None:
     """Вся тяжёлая работа — в отдельном потоке, чтобы не блокировать HTTP-ответ."""
     try:
         # 1. Генерируем сказку (парсинг + генерация в одном запросе)
@@ -78,9 +95,20 @@ def _generate_and_send(user_id: str, question: str) -> None:
         )
         send_message(peer_id=user_id, text=final_text)
 
-    except Exception:
+    except Exception as e:
+        error_message = str(e)
         logger.exception("Ошибка при генерации сказки для user_id=%s", user_id)
         send_message(peer_id=user_id, text="Произошла ошибка при создании сказки. Попробуйте ещё раз.")
+        _notify_admin(error_message=error_message, user_id=user_id)
+        if callback_url:
+            try:
+                httpx.post(
+                    callback_url,
+                    json={"status": "error", "user_id": user_id, "error_message": error_message},
+                    timeout=10,
+                )
+            except Exception:
+                logger.exception("Не удалось отправить callback об ошибке")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -94,7 +122,7 @@ async def index():
 async def generate(request: GenerateRequest):
     """Принимает запрос и сразу возвращает 200. Генерация идёт в фоне."""
     loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, _generate_and_send, request.user_id, request.question)
+    loop.run_in_executor(None, _generate_and_send, request.user_id, request.question, request.callback_url)
     return {"status": "ok"}
 
 
@@ -108,6 +136,32 @@ async def get_tale(tale_id: str):
 
     with open(html_path, "r", encoding="utf-8") as f:
         return f.read()
+
+
+@app.post("/test-error")
+async def test_error(request: GenerateRequest):
+    """Тестовый эндпоинт: намеренно вызывает ошибку и проверяет уведомления."""
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _test_error_worker, request.user_id, request.callback_url)
+    return {"status": "ok", "message": "Тест запущен, ошибка будет сгенерирована в фоне"}
+
+
+def _test_error_worker(user_id: str, callback_url: str | None = None) -> None:
+    try:
+        raise RuntimeError("Тестовая ошибка для проверки уведомлений")
+    except Exception as e:
+        error_message = str(e)
+        logger.exception("Тестовая ошибка для user_id=%s", user_id)
+        _notify_admin(error_message=error_message, user_id=user_id)
+        if callback_url:
+            try:
+                httpx.post(
+                    callback_url,
+                    json={"status": "error", "user_id": user_id, "error_message": error_message},
+                    timeout=10,
+                )
+            except Exception:
+                logger.exception("Не удалось отправить callback об ошибке")
 
 
 @app.get("/health")
