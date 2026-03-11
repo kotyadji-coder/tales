@@ -36,14 +36,6 @@
 
 ---
 
-# Что осталось доделать
-
-- [ ] **Написать `GENERATE_IMAGE_PROMPT_PROMPT`** в `prompts.py` (сейчас заглушка с TODO)
-- [ ] **Настроить Google Cloud**: включить Vertex AI API
-- [ ] **Настроить аутентификацию**: service account или Application Default Credentials
-- [ ] **Настроить SmartBot Pro**: указать Webhook URL на `/generate`
-- [ ] **Протестировать** полный пайплайн end-to-end
-
 ---
 
 # Важные решения

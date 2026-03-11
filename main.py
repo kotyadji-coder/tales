@@ -65,10 +65,16 @@ def _generate_and_send(user_id: str, question: str) -> None:
 
         # 4. Отправляем ссылку + текст через SmartBot
         tale_url = f"{SERVER_URL}/tale/{tale_id}"
+        recommendations = "\n\n".join(
+            line for line in parsed["recommendations"].splitlines() if line.strip()
+        )
+        questions = "\n\n".join(
+            line for line in parsed["questions"].splitlines() if line.strip()
+        )
         final_text = (
             f"🧸 Ваша сказка готова!\n{tale_url}\n\n"
-            f"📖 Рекомендации:\n{parsed['recommendations']}\n\n"
-            f"💬 Вопросы для обсуждения:\n{parsed['questions']}"
+            f"📖 Рекомендации:\n{recommendations}\n\n"
+            f"💬 Вопросы для обсуждения:\n{questions}"
         )
         send_message(peer_id=user_id, text=final_text)
 
