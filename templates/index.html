@@ -197,42 +197,116 @@
       background: none;
       border: none;
       cursor: pointer;
-      padding: 4px;
+      padding: 8px;
+      width: 44px;
+      height: 44px;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 5px;
+      border-radius: 10px;
+      transition: background var(--transition);
     }
+    .hamburger:hover { background: var(--lavender-light); }
     .hamburger span {
       display: block;
-      width: 24px;
+      width: 22px;
       height: 2px;
       background: var(--text);
-      margin: 5px 0;
       border-radius: 2px;
-      transition: var(--transition);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      transform-origin: center;
     }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-    /* Mobile nav */
+    /* ─── Mobile overlay menu ───────────────────────────────────── */
     .mobile-nav {
-      display: none;
-      flex-direction: column;
-      gap: 0;
-      background: var(--white);
-      border-top: 1px solid var(--lavender-light);
-      padding: 16px 24px 24px;
-    }
-    .mobile-nav.open { display: flex; }
-    .mobile-nav a {
-      padding: 12px 0;
-      font-weight: 600;
-      color: var(--text);
-      text-decoration: none;
-      border-bottom: 1px solid var(--lavender-light);
-      font-size: 1rem;
-    }
-    .mobile-nav a:last-child { border-bottom: none; }
-    .mobile-nav-buttons {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(360px, 100%);
+      height: 100%;
+      background: var(--cream);
+      z-index: 300;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-top: 16px;
+      padding: 0 28px 40px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+      box-shadow: -8px 0 40px rgba(60, 40, 40, 0.12);
+    }
+    .mobile-nav.open { transform: translateX(0); }
+
+    .mobile-nav-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(40, 28, 28, 0.4);
+      z-index: 299;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-nav-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .mobile-nav-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(199, 184, 234, 0.25);
+      margin: 0 -28px;
+      padding: 0 28px;
+    }
+
+    .mobile-nav-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background var(--transition);
+      flex-shrink: 0;
+    }
+    .mobile-nav-close:hover { background: var(--lavender-light); }
+
+    .mobile-nav-links {
+      display: flex;
+      flex-direction: column;
+      margin-top: 8px;
+    }
+    .mobile-nav-links a {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      padding: 18px 0;
+      border-bottom: 1px solid rgba(199, 184, 234, 0.2);
+      transition: color var(--transition), padding-left var(--transition);
+      display: block;
+    }
+    .mobile-nav-links a:last-child { border-bottom: none; }
+    .mobile-nav-links a:hover { color: #7c5cbf; padding-left: 6px; }
+
+    .mobile-nav-cta {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .mobile-nav-cta .btn {
+      width: 100%;
+      justify-content: center;
     }
 
     /* ─── HERO ─────────────────────────────────────────────────── */
@@ -649,7 +723,7 @@
 
       nav .nav-links { display: none; }
       .nav-cta { display: none; }
-      .hamburger { display: block; }
+      .hamburger { display: flex; }
 
       .why-cards { grid-template-columns: 1fr; }
 
@@ -691,18 +765,32 @@
       </button>
     </div>
   </div>
-
-  <!-- Мобильное меню -->
-  <div class="mobile-nav" id="mobile-nav">
-    <a href="#how" onclick="closeMobileNav()">Как работает</a>
-    <a href="#why" onclick="closeMobileNav()">Почему сказки</a>
-    <a href="#topics" onclick="closeMobileNav()">Темы сказок</a>
-    <a href="#reviews" onclick="closeMobileNav()">Отзывы</a>
-    <div class="mobile-nav-buttons">
-      <a href="#cta" class="btn btn-ghost" onclick="closeMobileNav()" style="text-align:center;justify-content:center;">Попробовать</a>
-    </div>
-  </div>
 </header>
+
+<!-- ─── МОБИЛЬНОЕ МЕНЮ ───────────────────────────────────────────── -->
+<div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+<div class="mobile-nav" id="mobile-nav" role="dialog" aria-label="Меню">
+  <div class="mobile-nav-top">
+    <a href="/" class="logo">
+      <img src="/static/logo.png" alt="" style="height:48px;width:auto;display:block;" />
+      <span class="logo-text">СказкаБот</span>
+    </a>
+    <button class="mobile-nav-close" id="mobile-nav-close" aria-label="Закрыть">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <nav class="mobile-nav-links">
+    <a href="#how">Как работает</a>
+    <a href="#why">Почему сказки</a>
+    <a href="#topics">Темы сказок</a>
+    <a href="#reviews">Отзывы</a>
+  </nav>
+  <div class="mobile-nav-cta">
+    <a href="#cta" class="btn btn-sky">Создать сказку</a>
+  </div>
+</div>
 
 
 <!-- ─── HERO ────────────────────────────────────────────────────── -->
@@ -943,17 +1031,29 @@
 
 
 <script>
-  // ─── Hamburger menu ─────────────────────────────────────────────
-  const hamburger = document.getElementById('hamburger');
-  const mobileNav = document.getElementById('mobile-nav');
+  // ─── Mobile menu ─────────────────────────────────────────────────
+  const hamburger    = document.getElementById('hamburger');
+  const mobileNav    = document.getElementById('mobile-nav');
+  const mobileOverlay = document.getElementById('mobile-nav-overlay');
+  const mobileClose  = document.getElementById('mobile-nav-close');
 
-  hamburger.addEventListener('click', () => {
-    mobileNav.classList.toggle('open');
-  });
-
-  function closeMobileNav() {
-    mobileNav.classList.remove('open');
+  function openMenu() {
+    mobileNav.classList.add('open');
+    mobileOverlay.classList.add('open');
+    hamburger.classList.add('open');
+    document.body.style.overflow = 'hidden';
   }
+  function closeMenu() {
+    mobileNav.classList.remove('open');
+    mobileOverlay.classList.remove('open');
+    hamburger.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  hamburger.addEventListener('click', openMenu);
+  mobileClose.addEventListener('click', closeMenu);
+  mobileOverlay.addEventListener('click', closeMenu);
+  mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
 
   // ─── Scroll reveal animation ─────────────────────────────────────
   const observer = new IntersectionObserver((entries) => {
