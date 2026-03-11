@@ -119,6 +119,13 @@
       background: linear-gradient(135deg, #4a76a8, #5b8ec4);
       color: #fff;
     }
+    .btn-sky {
+      background: #99d3eb;
+      color: #1a3a4a;
+    }
+    .btn-sky:hover {
+      background: #7dc4e0;
+    }
     .btn-outline {
       background: transparent;
       border: 2px solid var(--lavender);
@@ -154,15 +161,19 @@
       height: 68px;
     }
 
-    /* Логотип — замените содержимое .logo на тег <img> */
     .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-text {
       font-size: 1.4rem;
       font-weight: 900;
-      color: #7c5cbf;
-      text-decoration: none;
+      color: var(--text);
       letter-spacing: -0.5px;
+      white-space: nowrap;
     }
-    .logo span { color: var(--text); }
 
     nav {
       display: flex;
@@ -346,28 +357,10 @@
       position: relative;
     }
 
-    .step-number {
-      position: absolute;
-      top: -14px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #7c5cbf;
-      color: white;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      font-size: 0.8rem;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Иконка шага — ЗАМЕНИТЕ на тег <img> с акварельной иконкой */
+    /* Иконка шага */
     .step-icon {
-      font-size: 3rem;
-      margin-bottom: 16px;
       display: block;
+      margin: 0 auto 20px;
     }
 
     .step h3 {
@@ -392,9 +385,12 @@
     }
 
     .why-card {
-      padding: 32px;
+      padding: 28px 32px;
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow);
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
     }
 
     .why-card:nth-child(1) { background: var(--peach-light); }
@@ -402,10 +398,16 @@
     .why-card:nth-child(3) { background: var(--yellow-light); }
     .why-card:nth-child(4) { background: var(--lavender-light); }
 
+    .why-card img {
+      flex-shrink: 0;
+    }
+
+    .why-card-text { flex: 1; }
+
     .why-card h3 {
       font-size: 1.1rem;
       font-weight: 800;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .why-card p {
@@ -669,7 +671,8 @@
     <div class="header-inner">
 
       <a href="/" class="logo">
-        <img src="/static/logo.png" alt="СказкаБот" style="height:40px;width:auto;display:block;" />
+        <img src="/static/logo.png" alt="" style="height:80px;width:auto;display:block;" />
+        <span class="logo-text">СказкаБот</span>
       </a>
 
       <nav>
@@ -708,12 +711,12 @@
     <div class="hero-inner">
 
       <div class="hero-text reveal">
-        <h1>Сказка,<br/>которая <em>помогает</em></h1>
+        <h1>Сказка,<br/>которая <em style="color:#99d3eb;">помогает</em></h1>
         <p class="hero-subtitle">
           Персональные терапевтические сказки для вашего ребёнка — с учётом его характера, увлечений и того, что его тревожит
         </p>
         <div class="hero-buttons">
-          <a href="#cta" class="btn btn-vk">Создать сказку</a>
+          <a href="#cta" class="btn btn-sky">Создать сказку</a>
         </div>
         <p class="hero-note">Попробуйте бесплатно <span>•</span> Займёт 5 минут</p>
       </div>
@@ -735,22 +738,19 @@
     <div class="steps">
 
       <div class="step reveal reveal-delay-1">
-        <div class="step-number">1</div>
-        <img src="/static/icon-1.png" alt="" class="step-icon" style="width:72px;height:72px;object-fit:contain;" />
+        <img src="/static/icon-1.png" alt="" class="step-icon" style="width:108px;height:108px;object-fit:contain;" />
         <h3>Расскажите о ребёнке</h3>
         <p>Ответьте на несколько вопросов: возраст, увлечения, что беспокоит</p>
       </div>
 
       <div class="step reveal reveal-delay-2">
-        <div class="step-number">2</div>
-        <img src="/static/icon-2.png" alt="" class="step-icon" style="width:72px;height:72px;object-fit:contain;" />
+        <img src="/static/icon-2.png" alt="" class="step-icon" style="width:108px;height:108px;object-fit:contain;" />
         <h3>ИИ создаёт сказку</h3>
         <p>Уникальная история с персонажами из мира вашего ребёнка</p>
       </div>
 
       <div class="step reveal reveal-delay-3">
-        <div class="step-number">3</div>
-        <img src="/static/icon-3.png" alt="" class="step-icon" style="width:72px;height:72px;object-fit:contain;" />
+        <img src="/static/icon-3.png" alt="" class="step-icon" style="width:108px;height:108px;object-fit:contain;" />
         <h3>Читайте вместе</h3>
         <p>Получите сказку с иллюстрацией, вопросами для обсуждения и рекомендациями для родителей</p>
       </div>
@@ -768,27 +768,35 @@
     <div class="why-cards">
 
       <div class="why-card reveal reveal-delay-1">
-        <img src="/static/icon-4.png" alt="" style="width:56px;height:56px;object-fit:contain;margin-bottom:12px;" />
-        <h3>Безопасное пространство</h3>
-        <p>Ребёнок проживает сложные ситуации через персонажа. Это не он боится — это зайчик боится. И зайчик справился.</p>
+        <img src="/static/icon-4.png" alt="" style="width:80px;height:80px;object-fit:contain;" />
+        <div class="why-card-text">
+          <h3>Безопасное пространство</h3>
+          <p>Ребёнок проживает сложные ситуации через персонажа. Это не он боится — это зайчик боится. И зайчик справился.</p>
+        </div>
       </div>
 
       <div class="why-card reveal reveal-delay-2">
-        <img src="/static/icon-5.png" alt="" style="width:56px;height:56px;object-fit:contain;margin-bottom:12px;" />
-        <h3>Язык, понятный детям</h3>
-        <p>Дети до 10 лет не понимают «перестань бояться» или «веди себя хорошо». Но они понимают историю про дракона, который научился дружить.</p>
+        <img src="/static/icon-5.png" alt="" style="width:80px;height:80px;object-fit:contain;" />
+        <div class="why-card-text">
+          <h3>Язык, понятный детям</h3>
+          <p>Дети до 10 лет не понимают «перестань бояться» или «веди себя хорошо». Но они понимают историю про дракона, который научился дружить.</p>
+        </div>
       </div>
 
       <div class="why-card reveal reveal-delay-3">
-        <img src="/static/icon-6.png" alt="" style="width:56px;height:56px;object-fit:contain;margin-bottom:12px;" />
-        <h3>Эмоциональный интеллект</h3>
-        <p>Через сказки дети учатся называть свои чувства, понимать других и находить решения.</p>
+        <img src="/static/icon-6.png" alt="" style="width:80px;height:80px;object-fit:contain;" />
+        <div class="why-card-text">
+          <h3>Эмоциональный интеллект</h3>
+          <p>Через сказки дети учатся называть свои чувства, понимать других и находить решения.</p>
+        </div>
       </div>
 
       <div class="why-card reveal reveal-delay-4">
-        <img src="/static/icon-7.png" alt="" style="width:56px;height:56px;object-fit:contain;margin-bottom:12px;" />
-        <h3>Связь с родителем</h3>
-        <p>Совместное чтение + обсуждение = доверие и близость. Мы даём вопросы, которые помогут поговорить о действительно важном.</p>
+        <img src="/static/icon-7.png" alt="" style="width:80px;height:80px;object-fit:contain;" />
+        <div class="why-card-text">
+          <h3>Связь с родителем</h3>
+          <p>Совместное чтение + обсуждение = доверие и близость. Мы даём вопросы, которые помогут поговорить о действительно важном.</p>
+        </div>
       </div>
 
     </div>
