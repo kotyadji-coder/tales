@@ -138,31 +138,6 @@ async def get_tale(tale_id: str):
         return f.read()
 
 
-@app.post("/test-error")
-async def test_error(request: GenerateRequest):
-    """Тестовый эндпоинт: намеренно вызывает ошибку и проверяет уведомления."""
-    loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, _test_error_worker, request.user_id, request.callback_url)
-    return {"status": "ok", "message": "Тест запущен, ошибка будет сгенерирована в фоне"}
-
-
-def _test_error_worker(user_id: str, callback_url: str | None = None) -> None:
-    try:
-        raise RuntimeError("Тестовая ошибка для проверки уведомлений")
-    except Exception as e:
-        error_message = str(e)
-        logger.exception("Тестовая ошибка для user_id=%s", user_id)
-        _notify_admin(error_message=error_message, user_id=user_id)
-        if callback_url:
-            try:
-                httpx.post(
-                    callback_url,
-                    json={"status": "error", "user_id": user_id, "error_message": error_message},
-                    timeout=10,
-                )
-            except Exception:
-                logger.exception("Не удалось отправить callback об ошибке")
-
 
 @app.get("/health")
 async def health():
