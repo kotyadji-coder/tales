@@ -139,6 +139,11 @@ async def get_tale(tale_id: str):
 
 
 
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("static/favicon.ico")
+
+
 @app.get("/health")
 async def health():
     """Проверка статуса сервера."""
