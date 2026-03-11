@@ -33,7 +33,7 @@ def _notify_admin(error_message: str, user_id: str) -> None:
     except Exception:
         logger.exception("Не удалось отправить уведомление администратору")
 
-SERVER_URL = "http://72.56.126.111:8000"
+SERVER_URL = "https://protale.ru"
 TALES_DIR = Path(__file__).parent / "tales"
 
 logger = logging.getLogger("tales")
