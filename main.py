@@ -1,5 +1,7 @@
 import asyncio
+import json
 import logging
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -8,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -138,16 +140,25 @@ async def index():
 
 
 @app.post("/generate")
-async def generate(request: GenerateRequest):
+async def generate(request: Request):
     """Принимает запрос и сразу возвращает 200. Генерация идёт в фоне."""
+    body_bytes = await request.body()
+    body_str = body_bytes.decode("utf-8")
+    body_str = re.sub(
+        r'("question":\s*"[^"]*)',
+        lambda m: m.group(0).replace("\n", " "),
+        body_str,
+    )
+    data = json.loads(body_str)
+    req = GenerateRequest(**data)
     db_logger.log(
         "INFO",
         "REQUEST",
-        f"Запрос получен: {request.question[:50]}",
-        user_id=request.user_id,
+        f"Запрос получен: {req.question[:50]}",
+        user_id=req.user_id,
     )
     loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, _generate_and_send, request.user_id, request.question, request.callback_url)
+    loop.run_in_executor(None, _generate_and_send, req.user_id, req.question, req.callback_url)
     return {"status": "ok"}
 
 
