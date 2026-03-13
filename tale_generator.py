@@ -32,7 +32,8 @@ def save_tale(
 
     # Генерируем HTML
     image_url = f"{server_url}/tales/{tale_id}.png"
-    html_content = _generate_html(title, image_url, body_text, recommendations, questions)
+    tale_url = f"{server_url}/tale/{tale_id}"
+    html_content = _generate_html(title, image_url, body_text, recommendations, questions, tale_url)
 
     # Сохраняем HTML
     html_path = TALES_DIR / f"{tale_id}.html"
@@ -42,11 +43,14 @@ def save_tale(
     return tale_id
 
 
-def _generate_html(title: str, image_url: str, story_text: str, recommendations: str = "", questions: str = "") -> str:
+def _generate_html(title: str, image_url: str, story_text: str, recommendations: str = "", questions: str = "", tale_url: str = "") -> str:
     """Генерирует красивый HTML для сказки."""
     paragraphs = "".join(
         f"<p>{p.strip()}</p>" for p in story_text.split("\n") if p.strip()
     )
+    description = story_text.strip()[:150].replace('"', '&quot;')
+    if len(story_text.strip()) > 150:
+        description += "…"
     rec_html = ""
     if recommendations:
         rec_paragraphs = "".join(
@@ -75,6 +79,12 @@ def _generate_html(title: str, image_url: str, story_text: str, recommendations:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="{title}" />
+    <meta property="og:description" content="{description}" />
+    <meta property="og:image" content="{image_url}" />
+    <meta property="og:url" content="{tale_url}" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
     <style>
