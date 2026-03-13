@@ -14,24 +14,32 @@ def _get_conn() -> sqlite3.Connection:
         _local.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS logs (
-                id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT    NOT NULL,
-                level     TEXT    NOT NULL,
-                message   TEXT    NOT NULL,
-                user_id   TEXT,
-                action    TEXT
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp  TEXT    NOT NULL,
+                level      TEXT    NOT NULL,
+                message    TEXT    NOT NULL,
+                user_id    TEXT,
+                action     TEXT,
+                channel_id TEXT
             )
             """
         )
+        # migrate existing databases that lack the channel_id column
+        existing = {
+            row[1]
+            for row in _local.conn.execute("PRAGMA table_info(logs)").fetchall()
+        }
+        if "channel_id" not in existing:
+            _local.conn.execute("ALTER TABLE logs ADD COLUMN channel_id TEXT")
         _local.conn.commit()
     return _local.conn
 
 
-def log(level: str, action: str, message: str, user_id: str | None = None) -> None:
+def log(level: str, action: str, message: str, user_id: str | None = None, channel_id: str | None = None) -> None:
     conn = _get_conn()
     conn.execute(
-        "INSERT INTO logs (timestamp, level, message, user_id, action) VALUES (?, ?, ?, ?, ?)",
-        (datetime.utcnow().isoformat(sep=" ", timespec="seconds"), level, message, user_id, action),
+        "INSERT INTO logs (timestamp, level, message, user_id, action, channel_id) VALUES (?, ?, ?, ?, ?, ?)",
+        (datetime.utcnow().isoformat(sep=" ", timespec="seconds"), level, message, user_id, action, channel_id),
     )
     conn.commit()
 

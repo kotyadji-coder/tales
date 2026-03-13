@@ -67,23 +67,23 @@ app.mount("/tales", StaticFiles(directory=str(TALES_DIR)), name="tales")
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 
 
-def _generate_and_send(user_id: str, question: str, callback_url: str | None = None) -> None:
+def _generate_and_send(user_id: str, question: str, channel_id: str, callback_url: str | None = None) -> None:
     """Вся тяжёлая работа — в отдельном потоке, чтобы не блокировать HTTP-ответ."""
     try:
         # 1. Генерируем сказку
-        db_logger.log("INFO", "STORY_START", "Генерация сказки начата", user_id=user_id)
+        db_logger.log("INFO", "STORY_START", "Генерация сказки начата", user_id=user_id, channel_id=channel_id)
         raw_response = generate_story(question)
         parsed = parse_response(raw_response)
 
         # 2. Сохраняем сказку
-        db_logger.log("INFO", "IMAGE_START", "Генерация изображения начата", user_id=user_id)
+        db_logger.log("INFO", "IMAGE_START", "Генерация изображения начата", user_id=user_id, channel_id=channel_id)
         img_prompt = generate_image_prompt(parsed["story"])
 
         try:
             image_bytes = generate_image(img_prompt)
-            db_logger.log("INFO", "IMAGE_DONE", "Изображение сгенерировано", user_id=user_id)
+            db_logger.log("INFO", "IMAGE_DONE", "Изображение сгенерировано", user_id=user_id, channel_id=channel_id)
         except Exception as img_err:
-            db_logger.log("ERROR", "IMAGE_ERROR", f"Ошибка генерации изображения: {img_err}", user_id=user_id)
+            db_logger.log("ERROR", "IMAGE_ERROR", f"Ошибка генерации изображения: {img_err}", user_id=user_id, channel_id=channel_id)
             raise
 
         tale_id = save_tale(
@@ -93,7 +93,7 @@ def _generate_and_send(user_id: str, question: str, callback_url: str | None = N
             recommendations=parsed["recommendations"],
             questions=parsed["questions"],
         )
-        db_logger.log("INFO", "STORY_DONE", f"Сказка сохранена: {tale_id}", user_id=user_id)
+        db_logger.log("INFO", "STORY_DONE", f"Сказка сохранена: {tale_id}", user_id=user_id, channel_id=channel_id)
 
         # 3. Отправляем через SmartBot
         tale_url = f"{SERVER_URL}/tale/{tale_id}"
@@ -111,14 +111,14 @@ def _generate_and_send(user_id: str, question: str, callback_url: str | None = N
 
         try:
             send_message(peer_id=user_id, text=final_text, status="success")
-            db_logger.log("INFO", "CALLBACK_SENT", f"Ответ отправлен в SmartBot, tale_id={tale_id}", user_id=user_id)
+            db_logger.log("INFO", "CALLBACK_SENT", f"Ответ отправлен в SmartBot, tale_id={tale_id}", user_id=user_id, channel_id=channel_id)
         except Exception as cb_err:
-            db_logger.log("ERROR", "CALLBACK_ERROR", f"Ошибка отправки в SmartBot: {cb_err}", user_id=user_id)
+            db_logger.log("ERROR", "CALLBACK_ERROR", f"Ошибка отправки в SmartBot: {cb_err}", user_id=user_id, channel_id=channel_id)
             raise
 
     except Exception as e:
         error_message = str(e)
-        db_logger.log("ERROR", "ERROR", f"Необработанная ошибка: {error_message}", user_id=user_id)
+        db_logger.log("ERROR", "ERROR", f"Необработанная ошибка: {error_message}", user_id=user_id, channel_id=channel_id)
         logger.exception("Ошибка при генерации сказки для user_id=%s", user_id)
         send_message(peer_id=user_id, text="Произошла ошибка при создании сказки. Попробуйте ещё раз.", status="error")
         _notify_admin(error_message=error_message, user_id=user_id)
@@ -156,9 +156,10 @@ async def generate(request: Request):
         "REQUEST",
         f"Запрос получен: {req.question[:50]}",
         user_id=req.user_id,
+        channel_id=req.channel_id,
     )
     loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, _generate_and_send, req.user_id, req.question, req.callback_url)
+    loop.run_in_executor(None, _generate_and_send, req.user_id, req.question, req.channel_id, req.callback_url)
     return {"status": "ok"}
 
 
@@ -187,6 +188,7 @@ async def admin_logs(password: str = Query(...)):
             f'<td style="color:{color};font-weight:bold">{r["level"]}</td>'
             f'<td>{r["action"] or ""}</td>'
             f'<td>{r["user_id"] or ""}</td>'
+            f'<td>{r["channel_id"] or ""}</td>'
             f'<td style="word-break:break-word">{r["message"]}</td>'
             f'</tr>\n'
         )
@@ -212,7 +214,7 @@ async def admin_logs(password: str = Query(...)):
   <h1>Logs</h1>
   <div class="meta">Последние 100 записей · Обновление каждые 30 сек · <a href="/admin/stats?password={password}">Stats</a></div>
   <table>
-    <tr><th>Время</th><th>Уровень</th><th>Действие</th><th>User ID</th><th>Сообщение</th></tr>
+    <tr><th>Время</th><th>Уровень</th><th>Действие</th><th>User ID</th><th>Channel ID</th><th>Сообщение</th></tr>
     {rows_html}
   </table>
 </body>
