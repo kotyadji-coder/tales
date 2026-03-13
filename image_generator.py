@@ -1,30 +1,42 @@
 import os
 
-import vertexai
-from vertexai.preview.vision_models import ImageGenerationModel
+from google import genai
+from google.genai import types
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-REGION = "us-central1"
-IMAGEN_MODEL = "imagen-3.0-generate-001"
 
 
 def generate_image(image_prompt: str) -> bytes:
     """
-    Генерирует изображение через Imagen 3 и возвращает байты PNG.
+    Генерирует изображение через Gemini 2.5 Flash Image и возвращает байты PNG.
     """
     credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if credentials_path:
-        from google.oauth2 import service_account
-        credentials = service_account.Credentials.from_service_account_file(credentials_path)
-        vertexai.init(project=PROJECT_ID, location=REGION, credentials=credentials)
+        client = genai.Client(
+            vertexai=True,
+            project=PROJECT_ID,
+            location="us-central1",
+        )
     else:
-        vertexai.init(project=PROJECT_ID, location=REGION)
-    model = ImageGenerationModel.from_pretrained(IMAGEN_MODEL)
-    response = model.generate_images(
-        prompt=image_prompt,
-        number_of_images=1,
-        aspect_ratio="1:1",
-        person_generation="allow_all",
+        client = genai.Client(
+            vertexai=True,
+            project=PROJECT_ID,
+            location="us-central1",
+        )
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash-preview-05-20",
+        contents=[image_prompt],
+        config=types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
+            image_config=types.ImageConfig(
+                aspect_ratio="1:1"
+            )
+        )
     )
-    image = response.images[0]
-    return image._image_bytes
+
+    for part in response.candidates[0].content.parts:
+        if part.inline_data is not None:
+            return part.inline_data.data
+
+    raise ValueError("No image data in response")

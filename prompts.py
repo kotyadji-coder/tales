@@ -190,7 +190,7 @@ GENERATE_IMAGE_PROMPT_PROMPT = """
 Только промт на английском, 2-3 предложения. Без пояснений.
 
 ОБЯЗАТЕЛЬНО ДОБАВЬ В КОНЕЦ ПРОМТА:
-"correct animal anatomy, proper proportions, no human body parts on animals"
+"correct animal anatomy, exactly four legs on animals, no extra limbs, proper proportions, no human body parts on animals"
 
 ПРИМЕР:
 "A cute little badger with proper animal anatomy standing in a cozy burrow kitchen, wearing a tiny apron, Scandinavian children's book illustration style, watercolor and ink, warm earthy colors, detailed background with jars and wooden shelves, whimsical hygge atmosphere, soft golden light, correct animal proportions, no human body parts"""
