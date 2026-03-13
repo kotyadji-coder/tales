@@ -1,3 +1,5 @@
+import json
+import logging
 import os
 
 import httpx
@@ -7,8 +9,10 @@ ACCESS_TOKEN = os.getenv("SMARTBOT_ACCESS_TOKEN", "quz7AFVUscatV5e2wy7rwd1ZLp2CB
 CHANNEL_ID = os.getenv("SMARTBOT_CHANNEL_ID", "8321357428")
 BLOCK_ID = os.getenv("SMARTBOT_BLOCK_ID", "69ad767327915f22d69f79e2")
 
+logger = logging.getLogger("tales")
 
-def send_message(peer_id: str, text: str) -> None:
+
+def send_message(peer_id: str, text: str, status: str = "success") -> None:
     """Отправляет финальное сообщение пользователю через SmartBot Pro."""
     payload = {
         "access_token": ACCESS_TOKEN,
@@ -16,7 +20,9 @@ def send_message(peer_id: str, text: str) -> None:
         "channel_id": CHANNEL_ID,
         "block_id": BLOCK_ID,
         "peer_id": peer_id,
-        "data": {"Messagetext": text},
+        "data": {"Messagetext": text, "status": status},
     }
+    logger.info("SmartBot payload: %s", json.dumps(payload, ensure_ascii=False))
     response = httpx.post(SMARTBOT_URL, json=payload, timeout=30)
+    logger.info("SmartBot response: status=%s body=%s", response.status_code, response.text)
     response.raise_for_status()

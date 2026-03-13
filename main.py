@@ -110,7 +110,7 @@ def _generate_and_send(user_id: str, question: str, callback_url: str | None = N
         )
 
         try:
-            send_message(peer_id=user_id, text=final_text)
+            send_message(peer_id=user_id, text=final_text, status="success")
             db_logger.log("INFO", "CALLBACK_SENT", f"Ответ отправлен в SmartBot, tale_id={tale_id}", user_id=user_id)
         except Exception as cb_err:
             db_logger.log("ERROR", "CALLBACK_ERROR", f"Ошибка отправки в SmartBot: {cb_err}", user_id=user_id)
@@ -120,7 +120,7 @@ def _generate_and_send(user_id: str, question: str, callback_url: str | None = N
         error_message = str(e)
         db_logger.log("ERROR", "ERROR", f"Необработанная ошибка: {error_message}", user_id=user_id)
         logger.exception("Ошибка при генерации сказки для user_id=%s", user_id)
-        send_message(peer_id=user_id, text="Произошла ошибка при создании сказки. Попробуйте ещё раз.")
+        send_message(peer_id=user_id, text="Произошла ошибка при создании сказки. Попробуйте ещё раз.", status="error")
         _notify_admin(error_message=error_message, user_id=user_id)
         if callback_url:
             try:
