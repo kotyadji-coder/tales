@@ -25,7 +25,7 @@ def generate_image(image_prompt: str) -> bytes:
         )
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash-preview-05-20",
+        model="gemini-2.5-flash-image",
         contents=[image_prompt],
         config=types.GenerateContentConfig(
             response_modalities=["IMAGE"],
