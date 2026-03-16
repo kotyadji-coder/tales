@@ -822,6 +822,15 @@
         width: 100%;
       }
     }
+  .mobile-only {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .mobile-only {
+      display: block;
+    }
+  }
   </style>
 </head>
 <body>
@@ -982,7 +991,7 @@
 <!-- ─── О СОЗДАТЕЛЕ ──────────────────────────────────────────────── -->
 <section class="creator" id="creator">
   <div class="container">
-    <h2 class="section-title reveal">Создатель - сказкотерапевт Анна Ломако </h2>
+    <h2 class="creator-title">Создатель —<br class="mobile-only">сказкотерапевт<br class="mobile-only">Анна Ломако</h2>
 
     <div class="creator-inner reveal">
 
