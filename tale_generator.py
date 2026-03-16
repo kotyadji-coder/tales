@@ -310,6 +310,7 @@ def _generate_html(title: str, image_url: str, story_text: str, recommendations:
 
             <div class="action-bar" id="action-bar">
                 <button id="print-btn" onclick="window.print()">Распечатать</button>
+                <button id="create-story-btn" onclick="window.location.href = 'https://protale.ru/'">Создать сказку</button>
                 <p id="tg-hint" style="display:none; color:#888; font-size:0.9em; text-align:center;">
                     Для печати откройте страницу в браузере
                 </p>
