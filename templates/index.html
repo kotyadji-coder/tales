@@ -736,6 +736,92 @@
       .cta-buttons { flex-direction: column; align-items: center; }
       .cta-buttons .btn { width: 100%; justify-content: center; }
     }
+
+    /* ─── CREATOR ───────────────────────────────────────────────── */
+    .creator {}
+
+    .creator-inner {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+    }
+
+    .creator-text {
+      flex: 0 0 50%;
+    }
+
+    .creator-text h3 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .creator-text p {
+      font-size: 0.98rem;
+      color: var(--text-soft);
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    .creator-text p:last-child { margin-bottom: 0; }
+
+    .creator-text strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .creator-text ul {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .creator-text ul li {
+      font-size: 0.95rem;
+      color: var(--text-soft);
+      line-height: 1.6;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .creator-text ul li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--lavender);
+      font-weight: 700;
+    }
+
+    .creator-video {
+      flex: 0 0 50%;
+    }
+
+    .creator-video iframe {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 853 / 480;
+      border-radius: var(--radius-lg);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .creator-inner {
+        flex-direction: column;
+      }
+      .creator-video {
+        flex: none;
+        width: 100%;
+        order: -1;
+      }
+      .creator-text {
+        flex: none;
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -886,6 +972,36 @@
           <h3>Связь с родителем</h3>
           <p>Совместное чтение + обсуждение = доверие и близость. Мы даём вопросы, которые помогут поговорить о действительно важном.</p>
         </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── О СОЗДАТЕЛЕ ──────────────────────────────────────────────── -->
+<section class="creator" id="creator">
+  <div class="container">
+    <h2 class="section-title reveal">О создателе</h2>
+
+    <div class="creator-inner reveal">
+
+      <div class="creator-text">
+        <h3>Анна Ломако</h3>
+        <p>Я рассказываю сказки. Со сцены, в школах, детских садах и для своих детей.</p>
+        <p>Сказка дает опору. В ней голоса всех женщин, что вкладывают в истории перед сном свою любовь.</p>
+        <p><strong>Мой путь:</strong></p>
+        <ul>
+          <li>Сказкотерапия и работа с благотворительным фондом</li>
+          <li>Игровые литературные занятия (вальдорфская педагогика)</li>
+          <li>Кукольный театр</li>
+          <li>Учительство и семейное обучение</li>
+        </ul>
+        <p>Я люблю искать лучшее для детей. Приглашаю вас в это путешествие.</p>
+      </div>
+
+      <div class="creator-video">
+        <iframe src="https://vk.com/video_ext.php?oid=-63358055&id=456239018&hash=0f12cb856b14a54c&autoplay=1" width="853" height="480" style="background-color: #000" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock;" frameborder="0" allowfullscreen></iframe>
       </div>
 
     </div>
