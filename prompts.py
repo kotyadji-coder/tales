@@ -186,11 +186,24 @@ GENERATE_IMAGE_PROMPT_PROMPT = """
 - НЕ рисуй человеческие ноги, руки или тело у животных
 - Стиль: милый мультяшный зверёк, как в книгах Beatrix Potter
 
+СТРОГИЕ ПРАВИЛА БЕЗОПАСНОСТИ (ОБЯЗАТЕЛЬНО):
+Иллюстрация ДОЛЖНА быть полностью безопасной для детей. КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО включать:
+- Оружие любого вида (пушки, мечи, ножи, стрелы и т.д.)
+- Насилие или драки
+- Кровь или травмы
+- Пугающие/хоррор элементы (монстры, призраки, черепа)
+- Огонь, взрывы, опасные ситуации
+- Взрослый контент или обнажённость
+- Алкоголь, курение, наркотики
+- Темы смерти
+- Тёмную или пугающую атмосферу
+ТОЛЬКО позитивный, дружелюбный, образовательный контент. Яркие цвета, добрые персонажи, безопасная обстановка.
+
 ФОРМАТ ОТВЕТА:
 Только промт на английском, 2-3 предложения. Без пояснений.
 
 ОБЯЗАТЕЛЬНО ДОБАВЬ В КОНЕЦ ПРОМТА:
-"correct animal anatomy, exactly four legs on animals, no extra limbs, proper proportions, no human body parts on animals"
+"correct animal anatomy, exactly four legs on animals, no extra limbs, proper proportions, no human body parts on animals, no weapons, no violence, no blood, no scary elements, no fire, no dangerous situations, child-safe content only"
 
 ПРИМЕР:
-"A cute little badger with proper animal anatomy standing in a cozy burrow kitchen, wearing a tiny apron, Scandinavian children's book illustration style, watercolor and ink, warm earthy colors, detailed background with jars and wooden shelves, whimsical hygge atmosphere, soft golden light, correct animal proportions, no human body parts"""
+"A cute little badger with proper animal anatomy standing in a cozy burrow kitchen, wearing a tiny apron, Scandinavian children's book illustration style, watercolor and ink, warm earthy colors, detailed background with jars and wooden shelves, whimsical hygge atmosphere, soft golden light, correct animal proportions, no human body parts, no weapons, no violence, child-safe content only"""
