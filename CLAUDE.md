@@ -15,7 +15,7 @@
 | Файл | Роль |
 |------|------|
 | `main.py` | FastAPI-сервер. Единственный эндпоинт: `POST /generate`. Оркестрирует весь пайплайн. |
-| `gemini_client.py` | Два вызова Gemini: `generate_story(question)` и `generate_image_prompt(story)`. Модель: `gemini-3-pro-preview`, регион `global`. |
+| `gemini_client.py` | Два вызова Gemini: `generate_story(question)` и `generate_image_prompt(story)`. Модель: `gemini-3.1-pro-preview`, регион `global`. |
 | `image_generator.py` | Генерация PNG через Imagen 3 (`imagen-3.0-generate-001`). Возвращает байты. |
 | `google_docs_client.py` | Копирует шаблон Google Doc, заменяет `{{STORY}}` и `{{IMAGE}}`, публикует, возвращает PDF-ссылку. |
 | `smartbot_client.py` | POST на `https://api.smartbotpro.ru/blocks/execute` с текстом сказки в поле `data.Messagetext`. |
