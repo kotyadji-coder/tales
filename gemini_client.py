@@ -1,5 +1,4 @@
 import os
-import re
 
 import vertexai
 from vertexai.generative_models import GenerativeModel, HarmBlockThreshold, HarmCategory, SafetySetting
@@ -11,40 +10,11 @@ REGION = "global"
 MODEL_NAME = "gemini-3.1-pro-preview"
 
 SAFETY_SETTINGS = [
-    SafetySetting(category=HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE),
-    SafetySetting(category=HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE),
-    SafetySetting(category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE),
-    SafetySetting(category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE),
+    SafetySetting(category=HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE),
+    SafetySetting(category=HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE),
+    SafetySetting(category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE),
+    SafetySetting(category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE),
 ]
-
-# Dangerous keywords → safe replacements for input sanitization
-_UNSAFE_SUBSTITUTIONS = {
-    r"\bубийств[аоу]?\b": "проблема",
-    r"\bубива[её]т\b": "расстраивает",
-    r"\bубить\b": "обидеть",
-    r"\bсмерть\b": "расставание",
-    r"\bумер(ла|ли|л)?\b": "ушёл",
-    r"\bпистолет\b": "игрушка",
-    r"\bоружи[ея]\b": "предмет",
-    r"\bнож\b": "предмет",
-    r"\bкровь\b": "слёзы",
-    r"\bнасили[ея]\b": "конфликт",
-    r"\bизнасилова\w+\b": "обидел",
-    r"\bсамоубийств[оа]\b": "грусть",
-    r"\bсуицид\b": "грусть",
-    r"\bнаркотик\w*\b": "конфета",
-    r"\bалкогол[ья]\b": "напиток",
-    r"\bвзрыв\w*\b": "событие",
-    r"\bтеррор\w*\b": "страх",
-    r"\bвойн[аы]\b": "конфликт",
-}
-
-
-def sanitize_input(text: str) -> str:
-    """Заменяет опасные ключевые слова на безопасные альтернативы."""
-    for pattern, replacement in _UNSAFE_SUBSTITUTIONS.items():
-        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
-    return text
 
 
 def _get_model() -> GenerativeModel:
@@ -61,9 +31,38 @@ def _get_model() -> GenerativeModel:
 def generate_story(question: str) -> str:
     """Парсит сообщение родителя и генерирует текст сказки."""
     model = _get_model()
-    prompt = GENERATE_STORY_PROMPT.format(question=sanitize_input(question))
-    response = model.generate_content(prompt, safety_settings=SAFETY_SETTINGS)
-    return response.text.strip()
+
+    # First attempt
+    response = model.generate_content(
+        GENERATE_STORY_PROMPT.format(question=question),
+        safety_settings=SAFETY_SETTINGS,
+    )
+    text = response.text.strip()
+
+    if not text:
+        # Second attempt with an explicit safety instruction
+        safe_question = (
+            f"{question}\n\n"
+            f"[СИСТЕМНОЕ ТРЕБОВАНИЕ]: Предыдущая попытка заблокирована фильтром безопасности. "
+            f"Напиши максимально мягкую, терапевтическую и абсолютно безопасную для психики ребенка сказку. "
+            f"Категорически избегай любых пугающих, жестоких или мрачных подробностей. "
+            f"Сфокусируйся исключительно на исцелении, поддержке, любви и позитивном выходе из ситуации."
+        )
+        response = model.generate_content(
+            GENERATE_STORY_PROMPT.format(question=safe_question),
+            safety_settings=SAFETY_SETTINGS,
+        )
+        text = response.text.strip()
+
+    if not text:
+        finish_reason = None
+        try:
+            finish_reason = response.candidates[0].finish_reason
+        except Exception:
+            pass
+        raise ValueError(f"Gemini вернул пустой ответ (finish_reason={finish_reason})")
+
+    return text
 
 
 def parse_response(response: str) -> dict:
