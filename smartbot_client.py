@@ -5,20 +5,19 @@ import os
 import httpx
 
 SMARTBOT_URL = "https://api.smartbotpro.ru/blocks/execute"
-ACCESS_TOKEN = os.getenv("SMARTBOT_ACCESS_TOKEN", "quz7AFVUscatV5e2wy7rwd1ZLp2CB004PSy2Mxh5MeGUgoChu4nwSVRumV3mUwQ7")
+ACCESS_TOKEN = os.getenv("SMARTBOT_ACCESS_TOKEN", "")
 
-# Channel configs: channel_id -> {success block_id, error block_id}
 CHANNEL_CONFIGS = {
-    "8692187786": {  # Telegram
-        "block_success": os.getenv("SMARTBOT_BLOCK_ID", "69ad767327915f22d69f79e2"),
-        "block_error": "69ad767327915f22d69f79d7",
+    os.getenv("SMARTBOT_TG_CHANNEL_ID", ""): {
+        "block_success": os.getenv("SMARTBOT_TG_BLOCK_SUCCESS", ""),
+        "block_error": os.getenv("SMARTBOT_TG_BLOCK_ERROR", ""),
     },
-    "63358055": {  # VK
-        "block_success": "69b42a6d0a0f1d927208db03",
-        "block_error": "69b42a6d0a0f1d927208db04",
+    os.getenv("SMARTBOT_VK_CHANNEL_ID", ""): {
+        "block_success": os.getenv("SMARTBOT_VK_BLOCK_SUCCESS", ""),
+        "block_error": os.getenv("SMARTBOT_VK_BLOCK_ERROR", ""),
     },
 }
-DEFAULT_CHANNEL_ID = os.getenv("SMARTBOT_CHANNEL_ID", "8692187786")
+DEFAULT_CHANNEL_ID = os.getenv("SMARTBOT_TG_CHANNEL_ID", "")
 
 logger = logging.getLogger("tales")
 
