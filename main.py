@@ -74,6 +74,8 @@ def _generate_and_send(user_id: str, question: str, channel_id: str, callback_ur
         db_logger.log("INFO", "STORY_START", "Генерация сказки начата", user_id=user_id, channel_id=channel_id)
         raw_response = generate_story(question)
         parsed = parse_response(raw_response)
+        if not parsed["story"].strip():
+            raise ValueError("Текст сказки пустой после парсинга ответа Gemini")
 
         # 2. Сохраняем сказку
         db_logger.log("INFO", "IMAGE_START", "Генерация изображения начата", user_id=user_id, channel_id=channel_id)
@@ -109,18 +111,34 @@ def _generate_and_send(user_id: str, question: str, channel_id: str, callback_ur
             f"💬 Вопросы для обсуждения:\n{questions}"
         )
 
-        try:
-            send_message(peer_id=user_id, text=final_text, status="success", channel_id=channel_id)
-            db_logger.log("INFO", "CALLBACK_SENT", f"Ответ отправлен в SmartBot, tale_id={tale_id}", user_id=user_id, channel_id=channel_id)
-        except Exception as cb_err:
-            db_logger.log("ERROR", "CALLBACK_ERROR", f"Ошибка отправки в SmartBot: {cb_err}", user_id=user_id, channel_id=channel_id)
-            raise
+        # Отправляем через SmartBot только если это НЕ kidion
+        if channel_id != "kidion":
+            try:
+                send_message(peer_id=user_id, text=final_text, status="success", channel_id=channel_id)
+                db_logger.log("INFO", "CALLBACK_SENT", f"Ответ отправлен в SmartBot, tale_id={tale_id}", user_id=user_id, channel_id=channel_id)
+            except Exception as cb_err:
+                db_logger.log("ERROR", "CALLBACK_ERROR", f"Ошибка отправки в SmartBot: {cb_err}", user_id=user_id, channel_id=channel_id)
+                raise
+
+        # Отправляем на callback_url если есть
+        if callback_url:
+            try:
+                httpx.post(
+                    callback_url,
+                    json={"status": "done", "user_id": user_id, "tale_url": tale_url},
+                    timeout=10,
+                )
+                db_logger.log("INFO", "WEB_CALLBACK_SENT", f"Callback отправлен: {callback_url}", user_id=user_id, channel_id=channel_id)
+            except Exception as wcb_err:
+                db_logger.log("ERROR", "WEB_CALLBACK_ERROR", f"Ошибка callback: {wcb_err}", user_id=user_id, channel_id=channel_id)
 
     except Exception as e:
         error_message = str(e)
         db_logger.log("ERROR", "ERROR", f"Необработанная ошибка: {error_message}", user_id=user_id, channel_id=channel_id)
         logger.exception("Ошибка при генерации сказки для user_id=%s", user_id)
-        send_message(peer_id=user_id, text="Произошла ошибка при создании сказки. Попробуйте ещё раз.", status="error", channel_id=channel_id)
+        # SmartBot ошибку только для НЕ kidion
+        if channel_id != "kidion":
+            send_message(peer_id=user_id, text="Произошла ошибка при создании сказки. Попробуйте ещё раз.", status="error", channel_id=channel_id)
         _notify_admin(error_message=error_message, user_id=user_id)
         if callback_url:
             try:

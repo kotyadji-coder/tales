@@ -1,4 +1,5 @@
 import os
+import re
 
 import vertexai
 from vertexai.generative_models import GenerativeModel, HarmBlockThreshold, HarmCategory, SafetySetting
@@ -65,21 +66,33 @@ def generate_story(question: str) -> str:
     return text
 
 
+def _normalize_marker(line: str) -> str:
+    """Убирает из строки всё кроме букв, чтобы сравнивать маркеры нечётко."""
+    return re.sub(r"[^а-яёА-ЯЁa-zA-Z]", "", line).upper()
+
+
+# Маркеры после нормализации
+_MARKER_MAP = {
+    "СКАЗКА": "story",
+    "РЕКОМЕНДАЦИИ": "recommendations",
+    "ВОПРОСЫДЛЯОБСУЖДЕНИЯ": "questions",
+}
+
+
 def parse_response(response: str) -> dict:
     """Разбивает ответ Gemini на части по разделителям."""
     sections = {"story": "", "recommendations": "", "questions": ""}
-    markers = {
-        "---СКАЗКА---": "story",
-        "---РЕКОМЕНДАЦИИ---": "recommendations",
-        "---ВОПРОСЫ ДЛЯ ОБСУЖДЕНИЯ---": "questions",
-    }
 
     current_key = None
     for line in response.splitlines():
-        stripped = line.strip()
-        if stripped in markers:
-            current_key = markers[stripped]
-        elif current_key is not None:
+        normalized = _normalize_marker(line)
+        matched = False
+        for marker_text, key in _MARKER_MAP.items():
+            if normalized == marker_text:
+                current_key = key
+                matched = True
+                break
+        if not matched and current_key is not None:
             sections[current_key] += line + "\n"
 
     return {k: v.strip().replace("**", "") for k, v in sections.items()}
