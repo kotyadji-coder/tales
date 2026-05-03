@@ -1,42 +1,100 @@
+import logging
 import os
 import re
+import time
 
-import vertexai
-from vertexai.generative_models import GenerativeModel, HarmBlockThreshold, HarmCategory, SafetySetting
+from google import genai
+from google.genai import types
 
 from prompts import GENERATE_IMAGE_PROMPT_PROMPT, GENERATE_STORY_PROMPT
 
+logger = logging.getLogger(__name__)
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-REGION = "global"
-MODEL_NAME = "gemini-3.1-pro-preview"
+VERTEX_REGION = "global"
+
+FALLBACK_CHAIN = [
+    ("ai_studio", "gemini-2.5-pro"),
+    ("ai_studio", "gemini-2.5-flash"),
+    ("vertex", "gemini-2.5-pro"),
+]
 
 SAFETY_SETTINGS = [
-    SafetySetting(category=HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE),
-    SafetySetting(category=HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE),
-    SafetySetting(category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE),
-    SafetySetting(category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE),
+    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_MEDIUM_AND_ABOVE"),
+    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_MEDIUM_AND_ABOVE"),
+    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_LOW_AND_ABOVE"),
+    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_MEDIUM_AND_ABOVE"),
 ]
 
 
-def _get_model() -> GenerativeModel:
+def _get_ai_studio_client() -> genai.Client:
+    return genai.Client(api_key=GEMINI_API_KEY)
+
+
+def _get_vertex_client() -> genai.Client:
     credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if credentials_path:
         from google.oauth2 import service_account
-        credentials = service_account.Credentials.from_service_account_file(credentials_path)
-        vertexai.init(project=PROJECT_ID, location=REGION, credentials=credentials)
-    else:
-        vertexai.init(project=PROJECT_ID, location=REGION)
-    return GenerativeModel(MODEL_NAME)
+        credentials = service_account.Credentials.from_service_account_file(
+            credentials_path,
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+        return genai.Client(vertexai=True, project=PROJECT_ID, location=VERTEX_REGION, credentials=credentials)
+    return genai.Client(vertexai=True, project=PROJECT_ID, location=VERTEX_REGION)
+
+
+def _call_with_fallback(contents, config=None):
+    """Try AI Studio gemini-2.5-pro -> AI Studio gemini-2.5-flash -> Vertex gemini-2.5-pro."""
+    last_error = None
+    for backend, model_name in FALLBACK_CHAIN:
+        try:
+            if backend == "ai_studio":
+                if not GEMINI_API_KEY:
+                    logger.info(f"Skipping AI Studio ({model_name}): no API key")
+                    continue
+                client = _get_ai_studio_client()
+            else:
+                client = _get_vertex_client()
+
+            tag = f"{backend}/{model_name}"
+            for attempt in range(4):
+                try:
+                    logger.info(f"Calling {tag} (attempt {attempt + 1})")
+                    response = client.models.generate_content(
+                        model=model_name, contents=contents, config=config,
+                    )
+                    logger.info(f"Success from {tag}")
+                    return response
+                except Exception as e:
+                    error_str = str(e)
+                    if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str.upper():
+                        if attempt < 3:
+                            wait = 2 ** attempt * 5
+                            logger.warning(f"{tag} rate limit, retry {attempt + 1}/3 after {wait}s")
+                            time.sleep(wait)
+                            continue
+                        logger.warning(f"{tag} rate limit exhausted, moving to next backend")
+                        last_error = e
+                        break
+                    else:
+                        raise
+        except Exception as e:
+            logger.warning(f"Failed {backend}/{model_name}: {e}")
+            last_error = e
+            continue
+
+    raise last_error or RuntimeError("All backends failed")
 
 
 def generate_story(question: str) -> str:
     """Парсит сообщение родителя и генерирует текст сказки."""
-    model = _get_model()
+    config = types.GenerateContentConfig(safety_settings=SAFETY_SETTINGS)
 
     # First attempt
-    response = model.generate_content(
+    response = _call_with_fallback(
         GENERATE_STORY_PROMPT.format(question=question),
-        safety_settings=SAFETY_SETTINGS,
+        config=config,
     )
     text = response.text.strip()
 
@@ -49,9 +107,9 @@ def generate_story(question: str) -> str:
             f"Категорически избегай любых пугающих, жестоких или мрачных подробностей. "
             f"Сфокусируйся исключительно на исцелении, поддержке, любви и позитивном выходе из ситуации."
         )
-        response = model.generate_content(
+        response = _call_with_fallback(
             GENERATE_STORY_PROMPT.format(question=safe_question),
-            safety_settings=SAFETY_SETTINGS,
+            config=config,
         )
         text = response.text.strip()
 
@@ -100,7 +158,7 @@ def parse_response(response: str) -> dict:
 
 def generate_image_prompt(story: str) -> str:
     """Генерирует промт для Imagen 3 на основе текста сказки."""
-    model = _get_model()
+    config = types.GenerateContentConfig(safety_settings=SAFETY_SETTINGS)
     prompt = GENERATE_IMAGE_PROMPT_PROMPT.format(story=story)
-    response = model.generate_content(prompt, safety_settings=SAFETY_SETTINGS)
+    response = _call_with_fallback(prompt, config=config)
     return response.text.strip()
