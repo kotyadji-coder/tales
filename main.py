@@ -16,8 +16,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import db_logger
-from gemini_client import generate_image_prompt, generate_story, parse_response
-from image_generator import generate_image
+from gemini_client import generate_image_prompt, generate_story, parse_response, get_last_backend as get_text_backend
+from image_generator import generate_image, get_last_backend as get_image_backend
 from smartbot_client import send_message
 from tale_generator import save_tale
 
@@ -76,6 +76,7 @@ def _generate_and_send(user_id: str, question: str, channel_id: str, callback_ur
         parsed = parse_response(raw_response)
         if not parsed["story"].strip():
             raise ValueError("Текст сказки пустой после парсинга ответа Gemini")
+        db_logger.log("INFO", "AI_BACKEND", f"Текст: {get_text_backend()}", user_id=user_id, channel_id=channel_id)
 
         # 2. Сохраняем сказку
         db_logger.log("INFO", "IMAGE_START", "Генерация изображения начата", user_id=user_id, channel_id=channel_id)
@@ -84,6 +85,7 @@ def _generate_and_send(user_id: str, question: str, channel_id: str, callback_ur
         try:
             image_bytes = generate_image(img_prompt)
             db_logger.log("INFO", "IMAGE_DONE", "Изображение сгенерировано", user_id=user_id, channel_id=channel_id)
+            db_logger.log("INFO", "AI_BACKEND", f"Картинка: {get_image_backend()}", user_id=user_id, channel_id=channel_id)
         except Exception as img_err:
             db_logger.log("ERROR", "IMAGE_ERROR", f"Ошибка генерации изображения: {img_err}", user_id=user_id, channel_id=channel_id)
             raise

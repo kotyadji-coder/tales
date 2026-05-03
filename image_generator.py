@@ -7,6 +7,8 @@ from google.genai import types
 
 logger = logging.getLogger(__name__)
 
+_last_backend = "unknown"
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 IMAGE_BACKENDS = ["ai_studio", "vertex"]
@@ -71,6 +73,8 @@ def generate_image(image_prompt: str) -> bytes:
                 for part in response.candidates[0].content.parts:
                     if part.inline_data is not None:
                         logger.info(f"Image generated via {tag}")
+                        global _last_backend
+                        _last_backend = f"{backend}/{IMAGE_MODEL}"
                         return part.inline_data.data
 
                 raise ValueError("No image data in response")
@@ -91,3 +95,7 @@ def generate_image(image_prompt: str) -> bytes:
                     break
 
     raise last_error or ValueError("All image backends failed")
+
+
+def get_last_backend() -> str:
+    return _last_backend

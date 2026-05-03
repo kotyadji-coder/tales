@@ -10,6 +10,8 @@ from prompts import GENERATE_IMAGE_PROMPT_PROMPT, GENERATE_STORY_PROMPT
 
 logger = logging.getLogger(__name__)
 
+_last_backend = "unknown"
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 VERTEX_REGION = "global"
@@ -65,6 +67,8 @@ def _call_with_fallback(contents, config=None):
                         model=model_name, contents=contents, config=config,
                     )
                     logger.info(f"Success from {tag}")
+                    global _last_backend
+                    _last_backend = tag
                     return response
                 except Exception as e:
                     error_str = str(e)
@@ -85,6 +89,10 @@ def _call_with_fallback(contents, config=None):
             continue
 
     raise last_error or RuntimeError("All backends failed")
+
+
+def get_last_backend() -> str:
+    return _last_backend
 
 
 def generate_story(question: str) -> str:
