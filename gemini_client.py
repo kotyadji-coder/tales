@@ -106,6 +106,8 @@ def generate_story(question: str) -> str:
     )
     text = response.text.strip()
 
+    logger.info(f"Raw Gemini response (first 300 chars): {text[:300]}")
+
     if not text:
         # Second attempt with an explicit safety instruction
         safe_question = (
@@ -154,14 +156,21 @@ def parse_response(response: str) -> dict:
         normalized = _normalize_marker(line)
         matched = False
         for marker_text, key in _MARKER_MAP.items():
-            if normalized == marker_text:
+            if marker_text in normalized:
                 current_key = key
                 matched = True
                 break
         if not matched and current_key is not None:
             sections[current_key] += line + "\n"
 
-    return {k: v.strip().replace("**", "") for k, v in sections.items()}
+    result = {k: v.strip().replace("**", "") for k, v in sections.items()}
+
+    # Fallback: если маркеры не найдены, весь текст — сказка
+    if not result["story"]:
+        logger.warning("Маркеры не найдены в ответе Gemini, используем весь текст как сказку")
+        result["story"] = response.strip().replace("**", "")
+
+    return result
 
 
 def generate_image_prompt(story: str) -> str:
