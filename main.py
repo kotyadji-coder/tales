@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import re
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -21,8 +22,8 @@ from image_generator import generate_image, get_last_backend as get_image_backen
 from smartbot_client import send_message
 from tale_generator import save_tale
 
-ADMIN_BOT_TOKEN = "8688139519:AAHjXoWLFXvurj5a60z_wghN50OxgnOoXUM"
-ADMIN_CHAT_ID = "856877325"
+ADMIN_BOT_TOKEN = os.getenv("ADMIN_BOT_TOKEN", "")
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "")
 ADMIN_PASSWORD = "protale2026"
 
 SERVER_URL = "https://protale.ru"
@@ -37,7 +38,9 @@ def _check_password(password: str):
 
 
 def _notify_admin(error_message: str, user_id: str) -> None:
-    text = f"❌ Ошибка: {error_message}, user: {user_id}"
+    if not ADMIN_BOT_TOKEN or not ADMIN_CHAT_ID:
+        return
+    text = f"❌ Ошибка tales: {error_message}, user: {user_id}"
     try:
         httpx.post(
             f"https://api.telegram.org/bot{ADMIN_BOT_TOKEN}/sendMessage",
