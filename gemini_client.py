@@ -10,6 +10,25 @@ from prompts import GENERATE_IMAGE_PROMPT_PROMPT, GENERATE_STORY_PROMPT
 
 logger = logging.getLogger(__name__)
 
+SYSTEM_INSTRUCTION = (
+    "Ты — профессиональный детский психолог и сертифицированный сказкотерапевт. "
+    "Ты работаешь в рамках терапевтической практики. Родители обращаются к тебе за помощью, "
+    "описывая проблемы своих детей (страхи, агрессия, тревожность, буллинг, травмы и т.д.). "
+    "Твоя задача — создать БЕЗОПАСНУЮ терапевтическую сказку, которая поможет ребёнку. "
+    "Описание проблемы родителем — это медицинский/психологический контекст, а не опасный контент. "
+    "Ты ВСЕГДА создаёшь добрые, исцеляющие сказки без насилия, жестокости и страшных образов."
+)
+
+SANITIZE_PROMPT = (
+    "Ты — детский психолог. Родитель описал проблему ребёнка. "
+    "Перефразируй запрос родителя в мягкой, терапевтической форме, убрав любые резкие "
+    "или потенциально триггерные формулировки. Сохрани ВСЮ важную информацию: "
+    "имя, возраст, пол ребёнка, суть проблемы, увлечения, особенности. "
+    "Просто опиши ситуацию мягким профессиональным языком.\n\n"
+    "Сообщение родителя:\n{question}\n\n"
+    "Перефразированный запрос:"
+)
+
 _last_backend = "unknown"
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -95,43 +114,67 @@ def get_last_backend() -> str:
     return _last_backend
 
 
+def _get_finish_reason(response) -> str:
+    """Извлекает finish_reason из ответа Gemini."""
+    try:
+        return str(response.candidates[0].finish_reason)
+    except Exception:
+        return "unknown"
+
+
+def _sanitize_question(question: str) -> str:
+    """Перефразирует вопрос родителя в мягкой форме через Gemini."""
+    logger.info("Sanitizing question to bypass safety filter")
+    config = types.GenerateContentConfig(
+        safety_settings=SAFETY_SETTINGS,
+        system_instruction=SYSTEM_INSTRUCTION,
+    )
+    response = _call_with_fallback(
+        SANITIZE_PROMPT.format(question=question),
+        config=config,
+    )
+    sanitized = (response.text or "").strip()
+    if not sanitized:
+        raise ValueError("Не удалось перефразировать запрос родителя")
+    logger.info(f"Sanitized question: {sanitized[:200]}")
+    return sanitized
+
+
 def generate_story(question: str) -> str:
     """Парсит сообщение родителя и генерирует текст сказки."""
-    config = types.GenerateContentConfig(safety_settings=SAFETY_SETTINGS)
+    config = types.GenerateContentConfig(
+        safety_settings=SAFETY_SETTINGS,
+        system_instruction=SYSTEM_INSTRUCTION,
+    )
 
-    # First attempt
+    # Attempt 1: оригинальный вопрос + system instruction
     response = _call_with_fallback(
         GENERATE_STORY_PROMPT.format(question=question),
         config=config,
     )
-    text = response.text.strip()
+    text = (response.text or "").strip()
 
-    logger.info(f"Raw Gemini response (first 300 chars): {text[:300]}")
+    if text:
+        logger.info(f"Raw Gemini response (first 300 chars): {text[:300]}")
+        return text
 
-    if not text:
-        # Second attempt with an explicit safety instruction
-        safe_question = (
-            f"{question}\n\n"
-            f"[СИСТЕМНОЕ ТРЕБОВАНИЕ]: Предыдущая попытка заблокирована фильтром безопасности. "
-            f"Напиши максимально мягкую, терапевтическую и абсолютно безопасную для психики ребенка сказку. "
-            f"Категорически избегай любых пугающих, жестоких или мрачных подробностей. "
-            f"Сфокусируйся исключительно на исцелении, поддержке, любви и позитивном выходе из ситуации."
-        )
-        response = _call_with_fallback(
-            GENERATE_STORY_PROMPT.format(question=safe_question),
-            config=config,
-        )
-        text = response.text.strip()
+    # Attempt 2: перефразируем вопрос (убираем триггерные слова)
+    logger.warning(f"Safety filter triggered (finish_reason={_get_finish_reason(response)}), sanitizing question")
+    sanitized = _sanitize_question(question)
+    response = _call_with_fallback(
+        GENERATE_STORY_PROMPT.format(question=sanitized),
+        config=config,
+    )
+    text = (response.text or "").strip()
 
-    if not text:
-        finish_reason = None
-        try:
-            finish_reason = response.candidates[0].finish_reason
-        except Exception:
-            pass
-        raise ValueError(f"Gemini вернул пустой ответ (finish_reason={finish_reason})")
+    if text:
+        logger.info(f"Sanitized attempt succeeded (first 300 chars): {text[:300]}")
+        return text
 
-    return text
+    raise ValueError(
+        f"Gemini заблокировал генерацию даже после перефразировки "
+        f"(finish_reason={_get_finish_reason(response)})"
+    )
 
 
 def _normalize_marker(line: str) -> str:
@@ -175,7 +218,13 @@ def parse_response(response: str) -> dict:
 
 def generate_image_prompt(story: str) -> str:
     """Генерирует промт для Imagen 3 на основе текста сказки."""
-    config = types.GenerateContentConfig(safety_settings=SAFETY_SETTINGS)
+    config = types.GenerateContentConfig(
+        safety_settings=SAFETY_SETTINGS,
+        system_instruction=SYSTEM_INSTRUCTION,
+    )
     prompt = GENERATE_IMAGE_PROMPT_PROMPT.format(story=story)
     response = _call_with_fallback(prompt, config=config)
-    return response.text.strip()
+    text = (response.text or "").strip()
+    if not text:
+        raise ValueError("Gemini вернул пустой image prompt")
+    return text
