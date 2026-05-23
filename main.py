@@ -17,10 +17,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import db_logger
+import evaluator
 from gemini_client import generate_image_prompt, generate_story, parse_response, get_last_backend as get_text_backend
 from image_generator import generate_image, get_last_backend as get_image_backend
 from smartbot_client import send_message
 from tale_generator import save_tale
+
+from jinja2 import Environment, FileSystemLoader
+_jinja_env = Environment(loader=FileSystemLoader(str(Path(__file__).parent / "templates")))
 
 ADMIN_BOT_TOKEN = os.getenv("ADMIN_BOT_TOKEN", "")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "")
@@ -101,6 +105,23 @@ def _generate_and_send(user_id: str, question: str, channel_id: str, callback_ur
             questions=parsed["questions"],
         )
         db_logger.log("INFO", "STORY_DONE", f"Сказка сохранена: {tale_id}", user_id=user_id, channel_id=channel_id)
+
+        # 2.5. Автоматическая оценка качества сказки
+        try:
+            eval_result = evaluator.run_evaluation(
+                content_id=tale_id,
+                tale_data={"title": parsed["story"].splitlines()[0] if parsed["story"] else "",
+                           "story": parsed["story"], "recommendations": parsed["recommendations"],
+                           "questions": parsed["questions"]},
+                bot_token=ADMIN_BOT_TOKEN,
+                chat_id=ADMIN_CHAT_ID,
+                server_url=SERVER_URL,
+            )
+            db_logger.log("INFO", "EVAL_DONE",
+                f"Оценка: {eval_result['score']}/100, критических: {eval_result['critical']}",
+                user_id=user_id, channel_id=channel_id)
+        except Exception as eval_err:
+            db_logger.log("ERROR", "EVAL_ERROR", f"Ошибка оценки: {eval_err}", user_id=user_id, channel_id=channel_id)
 
         # 3. Отправляем через SmartBot
         tale_url = f"{SERVER_URL}/tale/{tale_id}"
@@ -294,6 +315,49 @@ async def admin_stats(password: str = Query(...)):
 </body>
 </html>"""
     return html
+
+
+@app.get("/admin/evals", response_class=HTMLResponse)
+async def admin_evals(password: str = Query(...)):
+    _check_password(password)
+    stats = evaluator.get_stats_summary()
+    evaluations = evaluator.get_recent_evaluations(50)
+    recommendations = evaluator.get_recommendations("open") + evaluator.get_recommendations("reopened")
+    archived = evaluator.get_recommendations("fixed") + evaluator.get_recommendations("archived")
+
+    common_failures_enriched = [
+        {"check": f["check"], "count": f["count"],
+         "display": evaluator.CHECK_DISPLAY_NAMES.get(f["check"], f["check"])}
+        for f in stats["common_failures"]
+    ]
+
+    return _jinja_env.get_template("eval_dashboard.html").render(
+        password=password, stats=stats, evaluations=evaluations,
+        recommendations=recommendations, archived=archived,
+        check_names=evaluator.CHECK_DISPLAY_NAMES,
+        score_distribution_json=json.dumps(stats["score_distribution"]),
+        daily_scores_json=json.dumps(stats["daily_scores"]),
+        common_failures_json=json.dumps(common_failures_enriched),
+    )
+
+
+@app.get("/admin/evals/{content_id}", response_class=HTMLResponse)
+async def admin_eval_detail(content_id: str, password: str = Query(...)):
+    _check_password(password)
+    evaluation = evaluator.get_evaluation_by_content(content_id)
+    if not evaluation:
+        raise HTTPException(status_code=404, detail="Оценка не найдена")
+    checks = json.loads(evaluation["checks_json"])
+    return _jinja_env.get_template("eval_detail.html").render(
+        password=password, content_id=content_id, evaluation=evaluation, checks=checks,
+    )
+
+
+@app.post("/admin/evals/api/recommendation/{rec_id}/toggle")
+async def toggle_recommendation(rec_id: int, password: str = Query(...)):
+    _check_password(password)
+    evaluator.update_recommendation_status(rec_id, "fixed")
+    return {"status": "ok"}
 
 
 @app.get("/favicon.ico")
