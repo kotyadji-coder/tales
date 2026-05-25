@@ -28,7 +28,7 @@ _jinja_env = Environment(loader=FileSystemLoader(str(Path(__file__).parent / "te
 
 ADMIN_BOT_TOKEN = os.getenv("ADMIN_BOT_TOKEN", "")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "")
-ADMIN_PASSWORD = "protale2026"
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 
 SERVER_URL = "https://protale.ru"
 TALES_DIR = Path(__file__).parent / "tales"
