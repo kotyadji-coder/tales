@@ -216,6 +216,37 @@ async def get_tale(tale_id: str):
         return f.read()
 
 
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_home(password: str = Query(...)):
+    _check_password(password)
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Protale Admin</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #eee; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }}
+    .wrap {{ text-align: center; }}
+    h1 {{ margin-bottom: 40px; font-size: 28px; }}
+    .buttons {{ display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }}
+    a {{ display: block; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 32px 40px; text-decoration: none; color: #eee; font-size: 18px; transition: background 0.2s; min-width: 160px; }}
+    a:hover {{ background: #252525; border-color: #555; }}
+    .icon {{ font-size: 36px; display: block; margin-bottom: 12px; }}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Protale Admin</h1>
+    <div class="buttons">
+      <a href="/admin/logs?password={password}"><span class="icon">📋</span>Логи</a>
+      <a href="/admin/stats?password={password}"><span class="icon">📊</span>Статистика</a>
+      <a href="/admin/evals?password={password}"><span class="icon">✅</span>Оценки</a>
+    </div>
+  </div>
+</body>
+</html>"""
+
+
 @app.get("/admin/logs", response_class=HTMLResponse)
 async def admin_logs(password: str = Query(...)):
     _check_password(password)
