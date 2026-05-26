@@ -223,6 +223,12 @@ async def generate(request: Request):
     return {"status": "ok"}
 
 
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy():
+    html_path = Path(__file__).parent / "templates" / "privacy.html"
+    return html_path.read_text(encoding="utf-8")
+
+
 @app.get("/tale/{tale_id}", response_class=HTMLResponse)
 async def get_tale(tale_id: str):
     html_path = TALES_DIR / f"{tale_id}.html"
