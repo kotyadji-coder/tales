@@ -3,6 +3,8 @@ import json
 import logging
 import os
 import re
+import time
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -183,6 +185,17 @@ async def index():
     return html_path.read_text(encoding="utf-8")
 
 
+_rate_limits: dict[str, list[float]] = defaultdict(list)
+
+def _check_rate_limit(key: str, max_requests: int = 10, window: int = 60) -> bool:
+    now = time.time()
+    _rate_limits[key] = [t for t in _rate_limits[key] if now - t < window]
+    if len(_rate_limits[key]) >= max_requests:
+        return False
+    _rate_limits[key].append(now)
+    return True
+
+
 @app.post("/generate")
 async def generate(request: Request):
     """Принимает запрос и сразу возвращает 200. Генерация идёт в фоне."""
@@ -195,6 +208,9 @@ async def generate(request: Request):
     )
     data = json.loads(body_str)
     req = GenerateRequest(**data)
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip, max_requests=10, window=60):
+        raise HTTPException(status_code=429, detail="Too many requests")
     db_logger.log(
         "INFO",
         "REQUEST",
