@@ -57,9 +57,8 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 VERTEX_REGION = "global"
 
 FALLBACK_CHAIN = [
-    ("ai_studio", "gemini-2.5-pro"),
-    ("ai_studio", "gemini-2.5-flash"),
-    ("vertex", "gemini-2.5-pro"),
+    ("ai_studio", "gemini-3.5-flash"),
+    ("vertex", "gemini-3.5-flash"),
 ]
 
 SAFETY_SETTINGS = [
@@ -150,6 +149,7 @@ def _sanitize_question(question: str) -> str:
     config = types.GenerateContentConfig(
         safety_settings=SAFETY_SETTINGS,
         system_instruction=SYSTEM_INSTRUCTION,
+        thinking_config=types.ThinkingConfig(thinking_level="MINIMAL"),
     )
     response = _call_with_fallback(
         SANITIZE_PROMPT.format(question=question),
@@ -167,6 +167,7 @@ def generate_story(question: str) -> str:
     config = types.GenerateContentConfig(
         safety_settings=SAFETY_SETTINGS,
         system_instruction=SYSTEM_INSTRUCTION,
+        thinking_config=types.ThinkingConfig(thinking_level="MINIMAL"),
     )
 
     # Attempt 1: оригинальный вопрос + system instruction
@@ -243,6 +244,7 @@ def generate_image_prompt(story: str) -> str:
     config = types.GenerateContentConfig(
         safety_settings=SAFETY_SETTINGS,
         system_instruction=SYSTEM_INSTRUCTION,
+        thinking_config=types.ThinkingConfig(thinking_level="MINIMAL"),
     )
     prompt = GENERATE_IMAGE_PROMPT_PROMPT.format(story=story)
     response = _call_with_fallback(prompt, config=config)
